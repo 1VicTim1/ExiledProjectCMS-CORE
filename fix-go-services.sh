@@ -165,6 +165,7 @@ declare -A STATS=(
     [dockerfiles_updated]=0
     [gomod_updated]=0
     [dependencies_updated]=0
+    [backups_created]=0
     [errors_encountered]=0
     [build_tests_passed]=0
     [build_tests_failed]=0
@@ -302,6 +303,60 @@ process_service() {
     }
 
     log_success "Completed processing of $service_path"
+}
+
+# Fix Dockerfile go dependency handling
+fix_dockerfile_dependencies() {
+    print_step "Fixing Dockerfile Dependencies"
+    log_info "Starting Dockerfile dependency fixes"
+
+    for service_path in "${!GO_SERVICES[@]}"; do
+        local service_name="${GO_SERVICES[$service_path]}"
+        local dockerfile_path="$service_path/Dockerfile"
+
+        if [[ -f "$dockerfile_path" ]]; then
+            print_step "Checking Dockerfile: $service_name"
+            log_info "Processing Dockerfile: $dockerfile_path"
+
+            # Check if Dockerfile has go mod download without go mod tidy
+            if grep -q "go mod download" "$dockerfile_path" && ! grep -q "go mod tidy" "$dockerfile_path"; then
+                print_warning "Found go mod download without go mod tidy in $service_name"
+                log_warn "Dockerfile needs go mod tidy before go mod download: $dockerfile_path"
+
+                # Create backup
+                local backup_file="${dockerfile_path}.backup.$(date +%Y%m%d_%H%M%S)"
+                if cp "$dockerfile_path" "$backup_file"; then
+                    print_success "Backup created: $backup_file"
+                    log_success "Created backup: $backup_file"
+                    update_stats "backups_created"
+                else
+                    print_error "Failed to create backup for $dockerfile_path"
+                    log_error "Failed to create backup for $dockerfile_path"
+                    update_stats "errors_encountered"
+                    continue
+                fi
+
+                # Update Dockerfile to add go mod tidy before go mod download
+                if sed -i 's/RUN go mod download/RUN go mod tidy \&\& go mod download/g' "$dockerfile_path"; then
+                    print_success "Fixed Dockerfile dependencies for $service_name"
+                    log_success "Updated Dockerfile to include go mod tidy: $dockerfile_path"
+                    update_stats "dockerfiles_updated"
+                else
+                    print_error "Failed to update Dockerfile for $service_name"
+                    log_error "Failed to update Dockerfile: $dockerfile_path"
+                    update_stats "errors_encountered"
+                fi
+            else
+                print_success "Dockerfile dependencies OK: $service_name"
+                log_info "Dockerfile already has proper dependency handling: $dockerfile_path"
+            fi
+        else
+            print_warning "No Dockerfile found for $service_name"
+            log_warn "Dockerfile not found: $dockerfile_path"
+        fi
+    done
+
+    log_success "Completed Dockerfile dependency fixes"
 }
 
 # Test Docker builds
@@ -461,6 +516,9 @@ main() {
             update_stats "errors_encountered"
         fi
     done
+
+    # Fix Dockerfile dependencies
+    fix_dockerfile_dependencies
 
     # Test Docker builds
     test_docker_builds

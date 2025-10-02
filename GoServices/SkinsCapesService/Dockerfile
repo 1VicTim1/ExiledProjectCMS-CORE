@@ -7,10 +7,11 @@ WORKDIR /app
 RUN apk add --no-cache git gcc musl-dev
 
 # Copy go mod files
-COPY go.mod go.sum ./
+COPY go.mod ./
+COPY go.su[m] ./ || true
 
-# Download dependencies
-RUN go mod download
+# Clean and download dependencies
+RUN go mod tidy && go mod download
 
 # Copy source code
 COPY . .
