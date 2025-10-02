@@ -1,0 +1,43 @@
+# Email Service Template
+version: '3.8'
+
+services:
+  # Email Go Service
+  email-service:
+    build:
+      context: ./GoServices/EmailService
+      dockerfile: Dockerfile
+    container_name: exiled-email-service
+    environment:
+      - EMAIL_SERVICE_PORT=8082
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - EMAIL_QUEUE_ENABLED=${EMAIL_QUEUE_ENABLED:-true}
+      - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-3}
+      - EMAIL_RETRY_DELAY=${EMAIL_RETRY_DELAY:-300}
+    ports:
+      - "${EMAIL_SERVICE_PORT:-8082}:8082"
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${EMAIL_SERVICE_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    restart: unless-stopped

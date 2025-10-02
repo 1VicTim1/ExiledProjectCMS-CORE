@@ -1,0 +1,37 @@
+# Go Services Template
+version: '3.8'
+
+services:
+  # High-Performance Go API
+  go-api:
+    build:
+      context: ./GoServices/HighPerformanceAPI
+      dockerfile: Dockerfile
+    container_name: exiled-go-api
+    environment:
+      - GO_API_PORT=8080
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      - DATABASE_URL=${GO_DB_CONNECTION_STRING}
+      - REDIS_URL=${REDIS_CONNECTION_STRING}
+      - MAIN_API_URL=http://cms-api:80
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "${GO_API_PORT:-8080}:8080"
+    depends_on:
+      - cms-api
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${GO_API_REPLICAS:-2}
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    restart: unless-stopped

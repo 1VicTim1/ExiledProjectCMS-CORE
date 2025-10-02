@@ -1,0 +1,56 @@
+# Redis Cache Template with SSL Support
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: exiled-redis
+    command: >
+      redis-server
+      --include /usr/local/etc/redis/redis-ssl.conf
+      --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_SSL_PORT:-6380}:6380"  # TLS port
+      # Non-TLS port is disabled for security
+    volumes:
+      - redis_data:/data
+      - ./ssl-certificates/services/redis:/etc/ssl/certs:ro
+      - ./ssl-certificates/services/redis:/etc/ssl/private:ro
+      - ./ssl-certificates/ca:/etc/ssl/ca:ro
+      - ./ssl-infrastructure/service-configs/redis-ssl.conf:/usr/local/etc/redis/redis-ssl.conf:ro
+      - ./ssl-certificates/dhparam.pem:/etc/ssl/certs/dhparam.pem:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_SSL_CERT_FILE=/etc/ssl/certs/redis.crt
+      - REDIS_SSL_KEY_FILE=/etc/ssl/private/redis.key
+      - REDIS_SSL_CA_FILE=/etc/ssl/ca/ca.crt
+    healthcheck:
+      test: |
+        redis-cli --tls \
+          --cert /etc/ssl/certs/redis.crt \
+          --key /etc/ssl/private/redis.key \
+          --cacert /etc/ssl/ca/ca.crt \
+          -h redis \
+          -p 6380 \
+          -a ${REDIS_PASSWORD} \
+          ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      exiled-network:
+        aliases:
+          - redis.exiled.local
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: unless-stopped
+    depends_on:
+      - ssl-init
+
+volumes:
+  redis_data:
+    driver: local

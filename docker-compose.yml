@@ -1,0 +1,381 @@
+version: '3.8'
+
+services:
+  # Database Services
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: exiled-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${DB_SA_PASSWORD:-ExiledStrong123!}
+      - MSSQL_PID=Express
+    ports:
+      - "${SQLSERVER_PORT:-1433}:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${DB_SA_PASSWORD:-ExiledStrong123!}" -Q "SELECT 1" || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    profiles:
+      - sqlserver
+      - all
+
+  mysql:
+    image: mysql:8.0
+    container_name: exiled-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-ExiledStrong123!}
+      - MYSQL_DATABASE=${DB_NAME:-ExiledProjectCMS}
+      - MYSQL_USER=${DB_USER:-exiled}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-ExiledPass123!}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    profiles:
+      - mysql
+      - all
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: exiled-postgres
+    environment:
+      - POSTGRES_DB=${DB_NAME:-ExiledProjectCMS}
+      - POSTGRES_USER=${DB_USER:-exiled}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-ExiledPass123!}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-exiled}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    profiles:
+      - postgres
+      - all
+
+  # Cache Services
+  redis:
+    image: redis:7-alpine
+    container_name: exiled-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-ExiledRedis123!}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+
+  # Main C# API
+  cms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: exiled-cms-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:80
+      - DatabaseProvider=${DATABASE_PROVIDER:-SqlServer}
+      - CacheProvider=${CACHE_PROVIDER:-Redis}
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD:-ExiledRedis123!}
+      - Admin__DefaultUsername=${ADMIN_USERNAME:-admin}
+      - Plugins__Directory=/app/Plugins
+      - Plugins__EnableHotReload=true
+    ports:
+      - "${API_PORT:-5006}:80"
+    volumes:
+      - ./Plugins:/app/Plugins
+      - ./Uploads:/app/Uploads
+      - ./Logs:/app/Logs
+    depends_on:
+      - redis
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${API_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # High-Performance Go API
+  go-api:
+    build:
+      context: ./GoServices/HighPerformanceAPI
+      dockerfile: Dockerfile
+    container_name: exiled-go-api
+    environment:
+      - GO_API_PORT=8080
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER:-postgres}
+      - DATABASE_URL=${GO_DB_CONNECTION_STRING}
+      - REDIS_URL=redis:6379
+      - MAIN_API_URL=http://cms-api:80
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    ports:
+      - "${GO_API_PORT:-8080}:8080"
+    depends_on:
+      - redis
+      - cms-api
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${GO_API_REPLICAS:-2}
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Skins & Capes Go Service
+  skins-capes:
+    build:
+      context: ./GoServices/SkinsCapesService
+      dockerfile: Dockerfile
+    container_name: exiled-skins-capes
+    environment:
+      - SKINS_CAPES_PORT=8081
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER:-SqlServer}
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-ExiledRedis123!}
+      - SKINS_STORAGE_PATH=${SKINS_STORAGE_PATH:-./storage/skins}
+      - BASE_URL=${BASE_URL:-http://localhost:8081}
+    ports:
+      - "${SKINS_CAPES_PORT:-8081}:8081"
+    volumes:
+      - ./storage/skins:/app/storage/skins
+    depends_on:
+      - redis
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${SKINS_CAPES_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Email Go Service
+  email-service:
+    build:
+      context: ./GoServices/EmailService
+      dockerfile: Dockerfile
+    container_name: exiled-email-service
+    environment:
+      - EMAIL_SERVICE_PORT=8082
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER:-SqlServer}
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-ExiledRedis123!}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+    ports:
+      - "${EMAIL_SERVICE_PORT:-8082}:8082"
+    depends_on:
+      - redis
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${EMAIL_SERVICE_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Admin Panel (Vue.js)
+  admin-panel:
+    build:
+      context: ./Frontend/admin-panel
+      dockerfile: Dockerfile
+    container_name: exiled-admin-panel
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "${ADMIN_PORT:-3000}:80"
+    depends_on:
+      - cms-api
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Public Website (Vue.js)
+  webapp:
+    build:
+      context: ./Frontend/webapp
+      dockerfile: Dockerfile
+    container_name: exiled-webapp
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "${WEBAPP_PORT:-8090}:80"
+    depends_on:
+      - cms-api
+      - go-api
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${WEBAPP_REPLICAS:-2}
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: exiled-nginx
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - cms-api
+      - go-api
+      - skins-capes
+      - email-service
+      - admin-panel
+      - webapp
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: exiled-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - exiled-network
+    profiles:
+      - monitoring
+      - all
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: exiled-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - exiled-network
+    profiles:
+      - monitoring
+      - all
+
+volumes:
+  sqlserver_data:
+    driver: local
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  exiled-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

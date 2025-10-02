@@ -1,0 +1,51 @@
+# Base Docker Compose Template
+# Contains only core application services
+version: '3.8'
+
+networks:
+  exiled-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+  # Main C# API - ALWAYS REQUIRED
+  cms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: exiled-cms-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:80
+      - DatabaseProvider=${DATABASE_PROVIDER}
+      - CacheProvider=${CACHE_PROVIDER}
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__Redis=${REDIS_CONNECTION_STRING}
+      - Admin__DefaultUsername=${ADMIN_USERNAME:-admin}
+      - Plugins__Directory=/app/Plugins
+      - Plugins__EnableHotReload=${ENABLE_PLUGIN_HOT_RELOAD:-true}
+      - JWT__Secret=${JWT_SECRET}
+      - Encryption__Key=${ENCRYPTION_KEY}
+    ports:
+      - "${API_PORT:-5006}:80"
+    volumes:
+      - ./Plugins:/app/Plugins
+      - ./Uploads:/app/Uploads
+      - ./Logs:/app/Logs
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - exiled-network
+    deploy:
+      replicas: ${API_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: unless-stopped
