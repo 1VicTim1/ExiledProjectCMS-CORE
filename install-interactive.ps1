@@ -2,14 +2,18 @@
 # Advanced modular installation with component selection
 
 param(
-    [switch]$SkipPrerequisites
+    [switch]$SkipPrerequisites,
+    [string]$EnvFile = ".env",
+    [string]$LogFile
 )
 
 # Global variables
 $script:SelectedComponents = @()
 $script:ExternalServices = @()
 $script:ComposeFile = "docker-compose.generated.yml"
-$script:LogFile = "exiledproject-cms-install.log"
+$script:LogFile = if ($LogFile) { $LogFile } else { "exiledproject-cms-install.log" }
+$script:EnvFile = $EnvFile
+$script:EnvFileProvided = $PSBoundParameters.ContainsKey('EnvFile')
 
 # Configuration variables
 $script:DatabaseProvider = ""
@@ -27,6 +31,17 @@ function Write-Log {
     $logMessage = "$timestamp - $Message"
     Write-Host $logMessage
     $logMessage | Add-Content -Path $script:LogFile
+}
+
+function Init-Logging {
+    try {
+        $dir = Split-Path -Parent $script:LogFile
+        if ($dir -and -not (Test-Path $dir)) { New-Item -Path $dir -ItemType Directory -Force | Out-Null }
+        New-Item -ItemType File -Path $script:LogFile -Force | Out-Null
+    } catch {
+        $script:LogFile = ".\install.log"
+        New-Item -ItemType File -Path $script:LogFile -Force | Out-Null
+    }
 }
 
 function Write-Banner {
@@ -432,6 +447,15 @@ function Generate-DockerCompose {
 
     # Add component templates
     foreach ($component in $script:SelectedComponents) {
+        # Guard: skip frontend if sources are missing to avoid build errors
+        if ($component -eq 'frontend') {
+            $adminExists = Test-Path "Frontend\admin-panel"
+            $webappExists = Test-Path "Frontend\webapp"
+            if (-not $adminExists -and -not $webappExists) {
+                Write-Warning "Frontend sources not found (Frontend/admin-panel or Frontend/webapp). Skipping frontend component."
+                continue
+            }
+        }
         "`n# === $component ===" | Add-Content $script:ComposeFile
         # Remove version and networks section from component files
         Get-Content "docker-templates\$component.yml" |
@@ -455,6 +479,13 @@ networks:
 
 function Generate-EnvFile {
     Write-Step "Generating environment configuration..."
+
+    # If a custom env file was provided and exists, do not overwrite
+    if ((Test-Path $script:EnvFile) -and $script:EnvFileProvided) {
+        Write-Warning "Environment file already exists at $($script:EnvFile). Using existing file."
+        Write-Log "Using existing env file: $($script:EnvFile)"
+        return
+    }
 
     # Generate random passwords for databases
     $dbPassword = Generate-RandomPassword
@@ -610,8 +641,8 @@ ENABLE_CORS=true
 ENABLE_PLUGIN_HOT_RELOAD=true
 "@
 
-    $envContent | Set-Content ".env" -Encoding UTF8
-    Write-Success "Environment file generated: .env"
+    $envContent | Set-Content $script:EnvFile -Encoding UTF8
+    Write-Success "Environment file generated: $($script:EnvFile)"
 }
 
 function Show-InstallationSummary {
@@ -782,10 +813,10 @@ providers:
     # Start services
     Write-Step "Starting Docker services..."
     try {
-        docker-compose -f $script:ComposeFile up -d
+        docker-compose -f $script:ComposeFile --env-file "$script:EnvFile" up -d
     } catch {
         try {
-            docker compose -f $script:ComposeFile up -d
+            docker compose -f $script:ComposeFile --env-file "$script:EnvFile" up -d
         } catch {
             Write-Error "Failed to start Docker services"
             throw
@@ -860,20 +891,22 @@ function Show-CompletionInfo {
 
     Write-Host ""
     Write-Host "=== MANAGEMENT COMMANDS ===" -ForegroundColor Cyan
-    Write-Host "Start services:   docker-compose -f $($script:ComposeFile) up -d" -ForegroundColor Green
-    Write-Host "Stop services:    docker-compose -f $($script:ComposeFile) down" -ForegroundColor Green
-    Write-Host "View logs:        docker-compose -f $($script:ComposeFile) logs -f" -ForegroundColor Green
-    Write-Host "Update system:    git pull; docker-compose -f $($script:ComposeFile) build --pull" -ForegroundColor Green
+    Write-Host "Start services:   docker-compose -f $($script:ComposeFile) --env-file \"$($script:EnvFile)\" up -d" -ForegroundColor Green
+    Write-Host "Stop services:    docker-compose -f $($script:ComposeFile) --env-file \"$($script:EnvFile)\" down" -ForegroundColor Green
+    Write-Host "View logs:        docker-compose -f $($script:ComposeFile) --env-file \"$($script:EnvFile)\" logs -f" -ForegroundColor Green
+    Write-Host "Update system:    git pull; docker-compose -f $($script:ComposeFile) --env-file \"$($script:EnvFile)\" build --pull" -ForegroundColor Green
 
     Write-Host ""
+    Write-Host "Tip: If you start services manually, use: docker-compose -f $($script:ComposeFile) --env-file \"$($script:EnvFile)\" up -d" -ForegroundColor Yellow
+
     Write-Host "=== CONFIGURATION FILES ===" -ForegroundColor Cyan
-    Write-Host "Environment:      .env" -ForegroundColor Green
+    Write-Host "Environment:      $($script:EnvFile)" -ForegroundColor Green
     Write-Host "Docker Compose:   $($script:ComposeFile)" -ForegroundColor Green
     Write-Host "Installation log: $($script:LogFile)" -ForegroundColor Green
 
     Write-Host ""
     Write-Host "Important Notes:" -ForegroundColor Yellow
-    Write-Host "• Please backup your .env file - it contains sensitive information" -ForegroundColor Yellow
+    Write-Host "• Please backup your environment file ($($script:EnvFile)) - it contains sensitive information" -ForegroundColor Yellow
     Write-Host "• Change default passwords in production environments" -ForegroundColor Yellow
     Write-Host "• Configure firewall rules for your selected services" -ForegroundColor Yellow
     if ($script:SslMode -eq "self-signed") {
@@ -884,8 +917,10 @@ function Show-CompletionInfo {
 
 # Main function
 function Main {
-    # Initialize log
+    Init-Logging
     Write-Log "Starting ExiledProjectCMS Interactive Installation"
+    Write-Log "Using env file: $($script:EnvFile)"
+    Write-Log "Log file: $($script:LogFile)"
 
     Write-Banner
 
