@@ -24,6 +24,18 @@ COMPOSE_FILE="docker-compose.generated.yml"
 ENV_FILE=".env"
 ENV_FILE_PROVIDED=0
 
+# UI/TUI controls
+UI_ENABLED=1
+UI_PID=""
+SCRIPT_START_TIME=$(date +%s)
+
+# Step tracking
+STEP_NAMES=()
+STEP_STARTS=()
+STEP_ENDS=()
+STEP_STATUSES=()
+CURRENT_STEP_INDEX=-1
+
 # Configuration arrays
 SELECTED_COMPONENTS=()
 EXTERNAL_SERVICES=()
@@ -46,6 +58,107 @@ log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
 }
 
+# Step tracking helpers
+begin_step() {
+    local name="$1"
+    STEP_NAMES+=("$name")
+    STEP_STARTS+=("$(date +%s)")
+    STEP_ENDS+=("0")
+    STEP_STATUSES+=("running")
+    CURRENT_STEP_INDEX=$((${#STEP_NAMES[@]}-1))
+    log "BEGIN: $name"
+}
+
+end_step() {
+    local name="$1"
+    local idx=-1
+    for i in "${!STEP_NAMES[@]}"; do
+        if [ "${STEP_NAMES[$i]}" = "$name" ]; then
+            idx=$i
+            break
+        fi
+    done
+    if [ $idx -ge 0 ]; then
+        STEP_ENDS[$idx]="$(date +%s)"
+        STEP_STATUSES[$idx]="done"
+        log "END: $name"
+    fi
+}
+
+format_duration() {
+    local secs=$1
+    local h=$((secs/3600))
+    local m=$(((secs%3600)/60))
+    local s=$((secs%60))
+    if [ $h -gt 0 ]; then printf "%02dh %02dm %02ds" $h $m $s; else printf "%02dm %02ds" $m $s; fi
+}
+
+render_ui_once() {
+    local now=$(date +%s)
+    local total_elapsed=$((now - SCRIPT_START_TIME))
+    tput civis 2>/dev/null || true
+    tput clear 2>/dev/null || clear
+    local rows=$(tput lines 2>/dev/null || echo 40)
+    local cols=$(tput cols 2>/dev/null || echo 120)
+
+    # Reserve bottom area for logs
+    local log_lines=12
+    if [ $rows -lt 20 ]; then log_lines=6; fi
+    local step_area=$((rows - log_lines - 4))
+
+    # Header
+    echo -e "${PURPLE}╔════════════════════════════════════════════════════╗${NC}"
+    echo -e "${PURPLE}║${NC}${CYAN}${BOLD}       ExiledProjectCMS Installation Progress       ${NC}${PURPLE}║${NC}"
+    echo -e "${PURPLE}╚════════════════════════════════════════════════════╝${NC}"
+    echo -e "Total elapsed: $(format_duration $total_elapsed)\n"
+
+    # Steps
+    local count=${#STEP_NAMES[@]}
+    for i in $(seq 0 $((count-1)) 2>/dev/null); do
+        local name="${STEP_NAMES[$i]}"
+        local start=${STEP_STARTS[$i]}
+        local end=${STEP_ENDS[$i]}
+        local status=${STEP_STATUSES[$i]}
+        local dur
+        if [ "$end" != "0" ]; then dur=$((end-start)); else dur=$((now-start)); fi
+        local sym="⏳"; [ "$status" = "done" ] && sym="✅"
+        printf "%b%s%b  %s  %s\n" "$BLUE" "$sym" "$NC" "$name" "$(format_duration $dur)"
+    done | head -n "$step_area"
+
+    # Logs box
+    echo -e "\n${CYAN}${BOLD}─ Logs (last ${log_lines} lines) ─────────────────────────────────────────${NC}"
+    if [ -f "$LOG_FILE" ]; then
+        tail -n "$log_lines" "$LOG_FILE"
+    else
+        echo "(log file will appear here)"
+    fi
+}
+
+run_ui() {
+    while true; do
+        render_ui_once
+        sleep 0.5
+    done
+}
+
+start_ui() {
+    [ "$UI_ENABLED" -eq 0 ] && return 0
+    # Only start UI in non-interactive phases to avoid prompt conflicts
+    if [ -t 1 ]; then
+        run_ui &
+        UI_PID=$!
+    fi
+}
+
+stop_ui() {
+    if [ -n "$UI_PID" ]; then
+        kill "$UI_PID" 2>/dev/null || true
+        UI_PID=""
+        tput cnorm 2>/dev/null || true
+        clear
+    fi
+}
+
 parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -58,8 +171,11 @@ parse_args() {
                 shift
                 LOG_FILE="$1"
                 ;;
+            --no-ui)
+                UI_ENABLED=0
+                ;;
             --help|-h)
-                echo "Usage: $0 [--env-file <path>] [--log-file <path>]"
+                echo "Usage: $0 [--env-file <path>] [--log-file <path>] [--no-ui]"
                 exit 0
                 ;;
         esac
@@ -890,20 +1006,40 @@ main() {
 
     print_banner
 
+    begin_step "Prerequisites"
     check_prerequisites
+    end_step "Prerequisites"
+
+    begin_step "Configuration"
     select_database
     select_cache
     select_services
     select_monitoring
     configure_admin_user
     configure_security
+    end_step "Configuration"
 
+    begin_step "Confirmation"
     show_installation_summary
+    end_step "Confirmation"
 
+    # Start the live UI for non-interactive phases
+    start_ui
+
+    begin_step "Generate Docker Compose"
     generate_docker_compose
-    generate_env_file
+    end_step "Generate Docker Compose"
 
+    begin_step "Generate Environment"
+    generate_env_file
+    end_step "Generate Environment"
+
+    begin_step "Install Services"
     install_system
+    end_step "Install Services"
+
+    stop_ui
+
     show_completion_info
 
     log "Installation completed successfully"

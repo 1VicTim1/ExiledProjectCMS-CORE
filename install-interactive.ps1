@@ -4,7 +4,8 @@
 param(
     [switch]$SkipPrerequisites,
     [string]$EnvFile = ".env",
-    [string]$LogFile
+    [string]$LogFile,
+    [switch]$NoUI
 )
 
 # Global variables
@@ -14,6 +15,16 @@ $script:ComposeFile = "docker-compose.generated.yml"
 $script:LogFile = if ($LogFile) { $LogFile } else { "exiledproject-cms-install.log" }
 $script:EnvFile = $EnvFile
 $script:EnvFileProvided = $PSBoundParameters.ContainsKey('EnvFile')
+$script:NoUI = $NoUI
+$script:ScriptStart = Get-Date
+$script:StepStateFile = Join-Path $env:TEMP "exiledprojectcms-install-steps.json"
+$script:UIProcess = $null
+
+# Step tracking
+$script:StepOrder = New-Object System.Collections.ArrayList
+$script:StepStarts = @{}
+$script:StepEnds = @{}
+$script:StepStatuses = @{}
 
 # Configuration variables
 $script:DatabaseProvider = ""
@@ -74,6 +85,102 @@ function Write-Warning {
 function Write-Error {
     param([string]$Message)
     Write-Host "[ERROR] $Message" -ForegroundColor Red
+}
+
+# Step tracking and UI helpers
+function Update-StepStateFile {
+    $items = @()
+    foreach ($name in $script:StepOrder) {
+        $items += [pscustomobject]@{
+            name   = $name
+            start  = $script:StepStarts[$name]
+            end    = if ($script:StepEnds.ContainsKey($name)) { $script:StepEnds[$name] } else { 0 }
+            status = $script:StepStatuses[$name]
+        }
+    }
+    try {
+        $items | ConvertTo-Json -Depth 3 | Set-Content -Path $script:StepStateFile -Encoding UTF8
+    } catch {}
+}
+
+function Begin-Step {
+    param([string]$Name)
+    if (-not $script:StepOrder.Contains($Name)) { [void]$script:StepOrder.Add($Name) }
+    $script:StepStarts[$Name] = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $script:StepStatuses[$Name] = 'running'
+    Write-Log "BEGIN: $Name"
+    Update-StepStateFile
+}
+
+function End-Step {
+    param([string]$Name)
+    $script:StepEnds[$Name] = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $script:StepStatuses[$Name] = 'done'
+    Write-Log "END: $Name"
+    Update-StepStateFile
+}
+
+function Format-Duration {
+    param([int]$Seconds)
+    $ts = [TimeSpan]::FromSeconds($Seconds)
+    if ($ts.Hours -gt 0) { return ($ts.ToString('hh\:mm\:ss')) } else { return ($ts.ToString('mm\:ss')) }
+}
+
+function Start-UI {
+    if ($script:NoUI) { return }
+    # Build a temporary UI script that renders steps and tail of the log file in a loop
+    $uiScript = @'
+param([string]$LogFile,[string]$StateFile)
+function Format-Duration([int]$Seconds) {
+  $ts = [TimeSpan]::FromSeconds($Seconds);
+  if ($ts.Hours -gt 0) { return $ts.ToString('hh\:mm\:ss') } else { return $ts.ToString('mm\:ss') }
+}
+while ($true) {
+  try {
+    Clear-Host
+    $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    Write-Host "╔════════════════════════════════════════════════════╗" -ForegroundColor Magenta
+    Write-Host "║       ExiledProjectCMS Installation Progress       ║" -ForegroundColor Cyan
+    Write-Host "╚════════════════════════════════════════════════════╝" -ForegroundColor Magenta
+    if (Test-Path $StateFile) {
+      $state = Get-Content -Path $StateFile -Raw | ConvertFrom-Json
+    } else { $state = @() }
+    if ($state) {
+      # Compute total from min start
+      $minStart = ($state | Measure-Object -Property start -Minimum).Minimum
+      $total = $now - [int64]$minStart
+      Write-Host ("Total elapsed: {0}" -f (Format-Duration $total)) -ForegroundColor Yellow
+    } else {
+      Write-Host "Total elapsed: 00:00" -ForegroundColor Yellow
+    }
+    Write-Host ""
+    foreach ($item in $state) {
+      $end = if ($item.end -and $item.end -ne 0) { [int64]$item.end } else { $now }
+      $dur = $end - [int64]$item.start
+      $sym = if ($item.status -eq 'done') { '✅' } else { '⏳' }
+      Write-Host ("$sym  {0}  {1}" -f $item.name, (Format-Duration $dur)) -ForegroundColor White
+    }
+    Write-Host ""
+    Write-Host "─ Logs (last 12 lines) ─" -ForegroundColor Cyan
+    if (Test-Path $LogFile) { Get-Content -Path $LogFile -Tail 12 } else { Write-Host "(log file will appear here)" }
+  } catch {}
+  Start-Sleep -Milliseconds 500
+}
+'@
+    $uiFile = Join-Path $env:TEMP "exiledprojectcms-install-ui.ps1"
+    $uiScript | Set-Content -Path $uiFile -Encoding UTF8
+    try {
+        $script:UIProcess = Start-Process -FilePath powershell -ArgumentList "-NoLogo","-NoProfile","-ExecutionPolicy","Bypass","-File","`"$uiFile`"","-LogFile","`"$($script:LogFile)`"","-StateFile","`"$($script:StepStateFile)`"" -PassThru
+    } catch {
+        # Fallback: no UI
+    }
+}
+
+function Stop-UI {
+    if ($script:UIProcess -and -not $script:UIProcess.HasExited) {
+        try { $script:UIProcess.CloseMainWindow() | Out-Null } catch {}
+        try { $script:UIProcess.Kill() | Out-Null } catch {}
+    }
 }
 
 function Ask-YesNo {
@@ -925,21 +1032,43 @@ function Main {
     Write-Banner
 
     if (!$SkipPrerequisites) {
+        Begin-Step "Prerequisites"
         Test-Prerequisites
+        End-Step "Prerequisites"
     }
 
+    Begin-Step "Configuration"
     Select-Database
     Select-Cache
     Select-Services
     Select-Monitoring
     Configure-AdminUser
     Configure-Security
+    End-Step "Configuration"
 
+    Begin-Step "Confirmation"
     if (Show-InstallationSummary) {
+        End-Step "Confirmation"
+
+        Start-UI
+
+        Begin-Step "Generate Docker Compose"
         Generate-DockerCompose
+        End-Step "Generate Docker Compose"
+
+        Begin-Step "Generate Environment"
         Generate-EnvFile
+        End-Step "Generate Environment"
+
+        Begin-Step "Install Services"
         Install-System
+        End-Step "Install Services"
+
+        Stop-UI
+
         Show-CompletionInfo
+    } else {
+        End-Step "Confirmation"
     }
 
     Write-Log "Installation completed successfully"

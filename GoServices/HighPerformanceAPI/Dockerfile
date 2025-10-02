@@ -29,10 +29,11 @@ WORKDIR /root/
 # Copy the binary from builder
 COPY --from=builder /app/main .
 
-# Create non-root user
+# Create non-root user and set permissions
 RUN addgroup -g 1001 -S appuser && \
     adduser -S -D -H -u 1001 -h /root -s /sbin/nologin -G appuser -g appuser appuser && \
-    chown appuser:appuser /root/main
+    chown appuser:appuser /root/main && \
+    chmod +x /root/main
 
 USER appuser
 

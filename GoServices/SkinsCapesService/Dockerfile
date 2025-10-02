@@ -6,15 +6,14 @@ WORKDIR /app
 # Install dependencies for image processing
 RUN apk add --no-cache git gcc musl-dev
 
-# Copy go mod files
+# Copy go mod file
 COPY go.mod ./
-COPY go.su[m] ./ || true
-
-# Clean and download dependencies
-RUN go mod tidy && go mod download
 
 # Copy source code
 COPY . .
+
+# Initialize and download dependencies (will create go.sum)
+RUN go mod tidy && go mod download
 
 # Build the application
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o skins-capes-service .
