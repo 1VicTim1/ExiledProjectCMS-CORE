@@ -696,6 +696,81 @@ function Install-System {
         }
     }
 
+    # Prepare monitoring configuration files if monitoring stack is selected
+    if ($script:SelectedComponents -contains "monitoring") {
+        Write-Step "Preparing monitoring configuration files..."
+
+        $monitoringDirs = @(
+            "monitoring",
+            "monitoring\grafana\dashboards",
+            "monitoring\grafana\provisioning\datasources",
+            "monitoring\grafana\provisioning\dashboards"
+        )
+        foreach ($dir in $monitoringDirs) {
+            if (!(Test-Path $dir)) { New-Item -Path $dir -ItemType Directory -Force | Out-Null }
+        }
+
+        # Create default Prometheus configuration if missing
+        if (!(Test-Path "monitoring\prometheus.yml")) {
+            @'
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'exiled-api'
+    static_configs:
+      - targets: ['api:5006']
+
+  - job_name: 'go-api'
+    static_configs:
+      - targets: ['go-api:8080']
+
+  - job_name: 'skins-capes'
+    static_configs:
+      - targets: ['skins-capes:8081']
+'@ | Out-File -FilePath "monitoring\prometheus.yml" -Encoding UTF8 -Force
+        }
+
+        # Create Grafana datasource provisioning for Prometheus if missing
+        if (!(Test-Path "monitoring\grafana\provisioning\datasources\datasource.yml")) {
+            @'
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+'@ | Out-File -FilePath "monitoring\grafana\provisioning\datasources\datasource.yml" -Encoding UTF8 -Force
+        }
+
+        # Create Grafana dashboards provider if missing
+        if (!(Test-Path "monitoring\grafana\provisioning\dashboards\dashboard.yml")) {
+            @'
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+'@ | Out-File -FilePath "monitoring\grafana\provisioning\dashboards\dashboard.yml" -Encoding UTF8 -Force
+        }
+
+        Write-Success "Monitoring configuration prepared"
+    }
+
     # Generate SSL certificates if needed
     if ($script:SslMode -eq "self-signed") {
         Write-Step "Generating self-signed SSL certificates..."

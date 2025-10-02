@@ -653,6 +653,76 @@ install_system() {
     # Create necessary directories
     mkdir -p ssl logs storage/skins Plugins Uploads nginx/conf.d monitoring/grafana/dashboards scripts
 
+    # Prepare monitoring configuration files if monitoring stack is selected
+    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " monitoring " ]]; then
+        print_step "Preparing monitoring configuration files..."
+        # Ensure required directories exist
+        mkdir -p monitoring \
+                 monitoring/grafana/dashboards \
+                 monitoring/grafana/provisioning/datasources \
+                 monitoring/grafana/provisioning/dashboards
+
+        # Create default Prometheus configuration if missing
+        if [ ! -f monitoring/prometheus.yml ]; then
+            cat > monitoring/prometheus.yml << 'EOF'
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'exiled-api'
+    static_configs:
+      - targets: ['api:5006']
+
+  - job_name: 'go-api'
+    static_configs:
+      - targets: ['go-api:8080']
+
+  - job_name: 'skins-capes'
+    static_configs:
+      - targets: ['skins-capes:8081']
+EOF
+        fi
+
+        # Create Grafana datasource provisioning for Prometheus if missing
+        if [ ! -f monitoring/grafana/provisioning/datasources/datasource.yml ]; then
+            cat > monitoring/grafana/provisioning/datasources/datasource.yml << 'EOF'
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+EOF
+        fi
+
+        # Create Grafana dashboards provider if missing
+        if [ ! -f monitoring/grafana/provisioning/dashboards/dashboard.yml ]; then
+            cat > monitoring/grafana/provisioning/dashboards/dashboard.yml << 'EOF'
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+EOF
+        fi
+
+        print_success "Monitoring configuration prepared"
+    fi
+
     # Generate SSL certificates if needed
     if [ "$SSL_MODE" = "self-signed" ]; then
         print_step "Generating self-signed SSL certificates..."
