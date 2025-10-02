@@ -919,15 +919,61 @@ providers:
 
     # Start services
     Write-Step "Starting Docker services..."
+
+    # Determine compose command and log environment details
+    $composeUsesPlugin = $false
     try {
-        docker-compose -f $script:ComposeFile --env-file "$script:EnvFile" up -d
+        $null = docker-compose --version
+        $composeCmd = "docker-compose"
     } catch {
-        try {
-            docker compose -f $script:ComposeFile --env-file "$script:EnvFile" up -d
-        } catch {
-            Write-Error "Failed to start Docker services"
-            throw
-        }
+        $composeCmd = "docker compose"
+        $composeUsesPlugin = $true
+    }
+
+    Write-Log ("Docker version: " + (docker --version 2>&1))
+    if ($composeUsesPlugin) {
+        Write-Log ("Compose plugin version: " + (docker compose version 2>&1))
+    } else {
+        Write-Log ("Compose version: " + (docker-compose --version 2>&1))
+    }
+    Write-Log "Compose file: $($script:ComposeFile)"
+    Write-Log "Env file: $($script:EnvFile)"
+    if ($script:SelectedComponents.Count -gt 0) {
+        Write-Log ("Selected components: " + ($script:SelectedComponents -join ' '))
+    }
+
+    # Validate compose configuration
+    Write-Log "Validating docker compose configuration..."
+    $configExitCode = 0
+    if ($composeUsesPlugin) {
+        docker compose -f $script:ComposeFile --env-file "$script:EnvFile" config 2>&1 | Tee-Object -FilePath $script:LogFile -Append | Out-Null
+        $configExitCode = $LASTEXITCODE
+    } else {
+        docker-compose -f $script:ComposeFile --env-file "$script:EnvFile" config 2>&1 | Tee-Object -FilePath $script:LogFile -Append | Out-Null
+        $configExitCode = $LASTEXITCODE
+    }
+    if ($configExitCode -ne 0) {
+        Write-Error "Docker Compose configuration validation failed. See log: $($script:LogFile)"
+        throw "Compose config validation failed"
+    } else {
+        Write-Log "Compose configuration is valid"
+    }
+
+    # Bring services up and append full output to the log
+    Write-Log "Running: $composeCmd -f '$($script:ComposeFile)' --env-file '$($script:EnvFile)' up -d"
+    if ($composeUsesPlugin) {
+        docker compose -f $script:ComposeFile --env-file "$script:EnvFile" up -d 2>&1 | Tee-Object -FilePath $script:LogFile -Append | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Error "Docker services failed to start. See log: $($script:LogFile)"; throw }
+    } else {
+        docker-compose -f $script:ComposeFile --env-file "$script:EnvFile" up -d 2>&1 | Tee-Object -FilePath $script:LogFile -Append | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Error "Docker services failed to start. See log: $($script:LogFile)"; throw }
+    }
+
+    # Short summary of containers to the log
+    try {
+        docker ps --format "table {{.Names}}`t{{.Status}}`t{{.Ports}}" | Where-Object { $_ -match 'exiled|cms|go-api|skins|email|nginx|prometheus|grafana' } | Out-File -FilePath $script:LogFile -Append -Encoding UTF8
+    } catch {
+        # ignore
     }
 
     # Wait for services to be ready

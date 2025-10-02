@@ -902,11 +902,47 @@ EOF
     # Start services
     print_step "Starting Docker services..."
 
+    # Determine compose command and log environment
+    local COMPOSE_CMD
     if command -v docker-compose &> /dev/null; then
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+        COMPOSE_CMD="docker-compose"
     else
-        docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+        COMPOSE_CMD="docker compose"
     fi
+
+    log "Docker version: $(docker --version 2>&1)"
+    if [ "$COMPOSE_CMD" = "docker-compose" ]; then
+        log "Compose version: $(docker-compose --version 2>&1)"
+    else
+        log "Compose plugin version: $(docker compose version 2>&1)"
+    fi
+    log "Compose file: $COMPOSE_FILE"
+    log "Env file: $ENV_FILE"
+
+    # Log selected components
+    if [ ${#SELECTED_COMPONENTS[@]} -gt 0 ]; then
+        log "Selected components: ${SELECTED_COMPONENTS[*]}"
+    fi
+
+    # Validate compose configuration
+    log "Validating docker compose configuration..."
+    if ! $COMPOSE_CMD -f "$COMPOSE_FILE" --env-file "$ENV_FILE" config >> "$LOG_FILE" 2>&1; then
+        print_error "Docker Compose configuration validation failed. See log: $LOG_FILE"
+        exit 1
+    else
+        log "Compose configuration is valid"
+    fi
+
+    # Bring services up (append full output to log)
+    log "Running: $COMPOSE_CMD -f \"$COMPOSE_FILE\" --env-file \"$ENV_FILE\" up -d"
+    if ! $COMPOSE_CMD -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d >> "$LOG_FILE" 2>&1; then
+        print_error "Docker services failed to start. See log: $LOG_FILE"
+        exit 1
+    fi
+
+    # Short summary of containers
+    log "Currently running Exiled containers:"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(exiled|cms|go-api|skins|email|nginx|prometheus|grafana)" >> "$LOG_FILE" 2>&1
 
     # Wait for services to be ready
     print_step "Waiting for services to start..."
