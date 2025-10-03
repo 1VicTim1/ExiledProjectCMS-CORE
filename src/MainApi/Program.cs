@@ -77,21 +77,32 @@ if (app.Environment.IsDevelopment() || swaggerEnabled)
     });
 }
 
-app.UseHttpsRedirection();
+// Optional HTTPS redirection (disabled by default for containers)
+var httpsRedirectEnabled = string.Equals(Environment.GetEnvironmentVariable("HTTPS_REDIRECT_ENABLED"), "true", StringComparison.OrdinalIgnoreCase);
+if (httpsRedirectEnabled)
+{
+    app.UseHttpsRedirection();
+}
 
 // Prometheus metrics
 app.UseHttpMetrics();
 app.MapMetrics();
 
 // If a database is configured, ensure it exists and seed initial data
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     var ctx = scope.ServiceProvider.GetService<MainDbContext>();
     if (ctx != null)
     {
         ctx.Database.EnsureCreated();
         AppHelpers.SeedDatabase(ctx);
     }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Startup] Warning: database initialization failed: {ex.GetType().Name} - {ex.Message}");
+    // Continue running; repository calls may fail until DB becomes available.
 }
 
 // Health
