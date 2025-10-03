@@ -5,35 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="29f2252b-175b-4d29-afbf-2e8e33ce87e2" name="Changes" comment="asd">
-      <change afterPath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.deps.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.runtimeconfig.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.staticwebassets.endpoints.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.MvcApplicationPartsAssemblyInfo.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.CoreCompileInputs.cache" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.FileListAbsolute.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.Up2Date" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.genruntimeconfig.cache" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.endpoints.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json.cache" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.dgspec.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.targets" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/project.assets.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/project.nuget.cache" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/project.packagespec.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/obj/rider.project.model.nuget.info" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/monitoring/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/monitoring/prometheus/prometheus.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
