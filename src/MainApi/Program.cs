@@ -31,10 +31,9 @@ if (dbProvider == "mysql")
     var conn = AppHelpers.BuildMySqlConnectionString(dbHost, dbPort, dbName, dbUser, dbPassword);
     // Avoid opening a DB connection during service registration (ServerVersion.AutoDetect connects immediately).
     // Allow overriding server version via MYSQL_SERVER_VERSION (e.g., 8.0.0). Defaults to 8.0.0.
-    var mysqlVersionText = Environment.GetEnvironmentVariable("MYSQL_SERVER_VERSION") ?? "8.0.0";
-    if (!Version.TryParse(mysqlVersionText, out var mysqlVersion)) mysqlVersion = new Version(8, 0, 0);
+    // Use Pomelo's ServerVersion.AutoDetect for broad compatibility across package versions.
     builder.Services.AddDbContext<MainDbContext>(options =>
-        options.UseMySql(conn, new Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlServerVersion(mysqlVersion)));
+        options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
     builder.Services.AddScoped<IUserRepository, EfUserRepository>();
     builder.Services.AddScoped<INewsRepository, EfNewsRepository>();
     dbConfigured = true;
