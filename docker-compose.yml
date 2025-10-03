@@ -22,6 +22,8 @@ services:
     image: mysql:8.0
     profiles: [ "mysql" ]
     container_name: mysql
+    env_file:
+      - ./.env
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
       - MYSQL_DATABASE=${DB_NAME:-exiledcms}
@@ -29,6 +31,7 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./db/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - backend
 
@@ -50,22 +53,10 @@ services:
   prometheus:
     image: prom/prometheus:v2.54.1
     container_name: prometheus
-    command:
-      - /bin/sh
-      - -c
-      - |
-        if [ -n "$PROMETHEUS_WEB_USER" ] && [ -n "$PROMETHEUS_WEB_PASSWORD_BCRYPT" ]; then
-          cat > /etc/prometheus/web.yml <<EOF
-        basic_auth_users:
-          $PROMETHEUS_WEB_USER: $PROMETHEUS_WEB_PASSWORD_BCRYPT
-        EOF
-          exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.config.file=/etc/prometheus/web.yml --web.enable-admin-api
-        else
-          echo "Prometheus basic auth disabled (set PROMETHEUS_WEB_USER and PROMETHEUS_WEB_PASSWORD_BCRYPT to enable)."
-          exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.enable-admin-api
-        fi
+    command: [ "/bin/sh", "/etc/prometheus/entrypoint.sh" ]
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/entrypoint.sh:/etc/prometheus/entrypoint.sh:ro
       - prometheus_data:/prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
