@@ -549,10 +549,35 @@ function Generate-RandomPassword {
 function Generate-DockerCompose {
     Write-Step "Generating Docker Compose configuration..."
 
-    # Start with base template
-    Get-Content "docker-templates\base.yml" | Set-Content $script:ComposeFile
+    function Extract-Block {
+        param(
+            [string]$Path,
+            [string]$Header  # 'services:' or 'volumes:'
+        )
+        $lines = Get-Content -LiteralPath $Path -ErrorAction Stop
+        $out = New-Object System.Collections.Generic.List[string]
+        $inBlock = $false
+        foreach ($line in $lines) {
+            if (-not $inBlock) {
+                if ($line -match "^$Header\s*$") { $inBlock = $true; continue }
+            } else {
+                if ($line -match '^[^\s#]') { break }
+                $out.Add($line)
+            }
+        }
+        return $out
+    }
 
-    # Add component templates
+    # Start a fresh compose with single top-level sections
+    @(
+        "version: '3.8'",
+        "",
+        "services:"
+    ) | Set-Content -LiteralPath $script:ComposeFile -Encoding UTF8
+
+    # Append services from base and selected components
+    Extract-Block -Path "docker-templates/base.yml" -Header 'services:' | Add-Content -LiteralPath $script:ComposeFile -Encoding UTF8
+
     foreach ($component in $script:SelectedComponents) {
         # Guard: skip frontend if sources are missing to avoid build errors
         if ($component -eq 'frontend') {
@@ -563,11 +588,15 @@ function Generate-DockerCompose {
                 continue
             }
         }
-        "`n# === $component ===" | Add-Content $script:ComposeFile
-        # Remove version and networks section from component files
-        Get-Content "docker-templates\$component.yml" |
-            Where-Object { $_ -notmatch '^version:' -and $_ -notmatch '^networks:' } |
-            Add-Content $script:ComposeFile
+        "`n# === $component ===" | Add-Content -LiteralPath $script:ComposeFile -Encoding UTF8
+        Extract-Block -Path "docker-templates/$component.yml" -Header 'services:' | Add-Content -LiteralPath $script:ComposeFile -Encoding UTF8
+    }
+
+    # Merge volumes into a single section
+    "`nvolumes:" | Add-Content -LiteralPath $script:ComposeFile -Encoding UTF8
+    Extract-Block -Path "docker-templates/base.yml" -Header 'volumes:' | Add-Content -LiteralPath $script:ComposeFile -Encoding UTF8
+    foreach ($component in $script:SelectedComponents) {
+        Extract-Block -Path "docker-templates/$component.yml" -Header 'volumes:' | Add-Content -LiteralPath $script:ComposeFile -Encoding UTF8
     }
 
     # Add networks section

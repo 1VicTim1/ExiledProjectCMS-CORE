@@ -555,10 +555,37 @@ configure_ssl() {
 generate_docker_compose() {
     print_step "Generating Docker Compose configuration..."
 
-    # Start with base template
-    cat docker-templates/base.yml > $COMPOSE_FILE
+    # Helpers to extract blocks from YAML templates
+    extract_services() {
+        awk '
+            /^services:/ { in=1; next }
+            in==1 {
+                if ($0 ~ /^[^[:space:]]/ && $0 !~ /^#/) { in=0 }
+            }
+            in==1 { print }
+        ' "$1"
+    }
+    extract_volumes() {
+        awk '
+            /^volumes:/ { in=1; next }
+            in==1 {
+                if ($0 ~ /^[^[:space:]]/ && $0 !~ /^#/) { in=0 }
+            }
+            in==1 { print }
+        ' "$1"
+    }
 
-    # Add network definition to all additional templates
+    # Start a fresh compose with single top-level sections
+    {
+        echo "version: '3.8'"
+        echo
+        echo "services:"
+    } > "$COMPOSE_FILE"
+
+    # Add services from base template first
+    extract_services "docker-templates/base.yml" >> "$COMPOSE_FILE"
+
+    # Add services from selected component templates
     for component in "${SELECTED_COMPONENTS[@]}"; do
         # Guard: skip frontend if source directories are missing to avoid build errors
         if [ "$component" = "frontend" ]; then
@@ -567,19 +594,27 @@ generate_docker_compose() {
                 continue
             fi
         fi
-        echo -e "\n# === $component ===" >> $COMPOSE_FILE
-        # Remove version and networks section from component files, keep only services and volumes
-        sed '/^version:/d; /^networks:/,/^$/d; /^$/N;/^\n$/d' docker-templates/${component}.yml >> $COMPOSE_FILE
+        echo -e "\n# === $component ===" >> "$COMPOSE_FILE"
+        extract_services "docker-templates/${component}.yml" >> "$COMPOSE_FILE"
     done
 
-    # Add networks section at the end
-    echo -e "\n# === NETWORKS ===" >> $COMPOSE_FILE
-    echo "networks:" >> $COMPOSE_FILE
-    echo "  exiled-network:" >> $COMPOSE_FILE
-    echo "    driver: bridge" >> $COMPOSE_FILE
-    echo "    ipam:" >> $COMPOSE_FILE
-    echo "      config:" >> $COMPOSE_FILE
-    echo "        - subnet: 172.20.0.0/16" >> $COMPOSE_FILE
+    # Merge volumes from base and components into a single section
+    echo -e "\nvolumes:" >> "$COMPOSE_FILE"
+    extract_volumes "docker-templates/base.yml" >> "$COMPOSE_FILE"
+    for component in "${SELECTED_COMPONENTS[@]}"; do
+        extract_volumes "docker-templates/${component}.yml" >> "$COMPOSE_FILE"
+    done
+
+    # Add networks section at the end (single definition)
+    {
+        echo -e "\n# === NETWORKS ==="
+        echo "networks:"
+        echo "  exiled-network:"
+        echo "    driver: bridge"
+        echo "    ipam:"
+        echo "      config:"
+        echo "        - subnet: 172.20.0.0/16"
+    } >> "$COMPOSE_FILE"
 
     print_success "Docker Compose configuration generated: $COMPOSE_FILE"
 }
@@ -820,7 +855,7 @@ install_system() {
     mkdir -p ssl logs storage/skins Plugins Uploads nginx/conf.d monitoring/grafana/dashboards scripts
 
     # Prepare monitoring configuration files if monitoring stack is selected
-    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " monitoring " ]]; then
+    if printf '%s\n' "${SELECTED_COMPONENTS[@]}" | grep -qx "monitoring"; then
         print_step "Preparing monitoring configuration files..."
         # Ensure required directories exist
         mkdir -p monitoring \
@@ -977,26 +1012,26 @@ show_completion_info() {
     echo ""
     echo -e "${CYAN}${BOLD}=== ACCESS INFORMATION ===${NC}"
 
-    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " frontend " ]]; then
+    if printf '%s\n' "${SELECTED_COMPONENTS[@]}" | grep -qx "frontend"; then
         echo -e "${GREEN}Admin Panel:${NC}     http://$DOMAIN_NAME:${ADMIN_PORT:-3000}"
         echo -e "${GREEN}Website:${NC}         http://$DOMAIN_NAME:${WEBAPP_PORT:-8090}"
     fi
 
     echo -e "${GREEN}Main API:${NC}        http://$DOMAIN_NAME:${API_PORT:-5006}"
 
-    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " services-go " ]]; then
+    if printf '%s\n' "${SELECTED_COMPONENTS[@]}" | grep -qx "services-go"; then
         echo -e "${GREEN}Go API:${NC}          http://$DOMAIN_NAME:${GO_API_PORT:-8080}"
     fi
 
-    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " services-skins " ]]; then
+    if printf '%s\n' "${SELECTED_COMPONENTS[@]}" | grep -qx "services-skins"; then
         echo -e "${GREEN}Skins API:${NC}       http://$DOMAIN_NAME:${SKINS_CAPES_PORT:-8081}"
     fi
 
-    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " loadbalancer " ]]; then
+    if printf '%s\n' "${SELECTED_COMPONENTS[@]}" | grep -qx "loadbalancer"; then
         echo -e "${GREEN}Load Balancer:${NC}   http://$DOMAIN_NAME:${HTTP_PORT:-80}"
     fi
 
-    if [[ " ${SELECTED_COMPONENTS[@]} " =~ " monitoring " ]]; then
+    if printf '%s\n' "${SELECTED_COMPONENTS[@]}" | grep -qx "monitoring"; then
         echo -e "${GREEN}Prometheus:${NC}      http://$DOMAIN_NAME:${PROMETHEUS_PORT:-9090}"
         echo -e "${GREEN}Grafana:${NC}         http://$DOMAIN_NAME:${GRAFANA_PORT:-3001}"
     fi

@@ -177,8 +177,9 @@ discover_machines() {
         echo -n "    \"$key\": {\"ip\": \"$ip\", \"name\": \"$name\", \"roles\": [" >> "$NODES_CONFIG"
 
         IFS=',' read -ra role_array <<< "$roles"
-        for i, role in "${role_array[@]}"; do
-            if [ $i -gt 0 ]; then echo -n ", " >> "$NODES_CONFIG"; fi
+        for i in "${!role_array[@]}"; do
+            role="${role_array[$i]}"
+            if [ "$i" -gt 0 ]; then echo -n ", " >> "$NODES_CONFIG"; fi
             echo -n "\"$role\"" >> "$NODES_CONFIG"
         done
         echo -n "]}" >> "$NODES_CONFIG"
