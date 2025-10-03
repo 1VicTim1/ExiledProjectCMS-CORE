@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,9 +6,45 @@ var builder = WebApplication.CreateBuilder(args);
 // Basic configuration
 builder.Services.Configure<RouteOptions>(o => o.LowercaseUrls = true);
 
-// Repositories (in-memory for now)
-builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-builder.Services.AddSingleton<INewsRepository, InMemoryNewsRepository>();
+// Configuration via .env
+LoadDotEnv(builder.Environment.ContentRootPath);
+
+// Database configuration from environment
+var dbProvider = Environment.GetEnvironmentVariable("DB_PROVIDER")?.Trim().ToLowerInvariant();
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var dbSslMode = Environment.GetEnvironmentVariable("DB_SSLMODE"); // optional (Postgres)
+
+var dbConfigured = false;
+
+if (dbProvider == "mysql")
+{
+    var conn = BuildMySqlConnectionString(dbHost, dbPort, dbName, dbUser, dbPassword);
+    builder.Services.AddDbContext<MainDbContext>(options =>
+        options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+    builder.Services.AddScoped<IUserRepository, EfUserRepository>();
+    builder.Services.AddScoped<INewsRepository, EfNewsRepository>();
+    dbConfigured = true;
+}
+else if (dbProvider == "postgres" || dbProvider == "postgresql")
+{
+    var conn = BuildPostgresConnectionString(dbHost, dbPort, dbName, dbUser, dbPassword, dbSslMode);
+    builder.Services.AddDbContext<MainDbContext>(options =>
+        options.UseNpgsql(conn));
+    builder.Services.AddScoped<IUserRepository, EfUserRepository>();
+    builder.Services.AddScoped<INewsRepository, EfNewsRepository>();
+    dbConfigured = true;
+}
+
+if (!dbConfigured)
+{
+    // Fallback to in-memory repositories
+    builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+    builder.Services.AddSingleton<INewsRepository, InMemoryNewsRepository>();
+}
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

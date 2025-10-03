@@ -6,7 +6,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <!-- TODO: Switch to MySQL provider (Pomelo.EntityFrameworkCore.MySql) when DB integration is added -->
-    <!-- <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" /> -->
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
   </ItemGroup>
 </Project>
