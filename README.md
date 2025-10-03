@@ -264,3 +264,27 @@ echo '{"Login":"tester","Password":"test123"}' | \
 
 ## Лицензия
 Пока не задана. Добавьте файл LICENSE при необходимости.
+
+## Swagger / OpenAPI
+
+Swagger (OpenAPI) подключён и работает. По умолчанию он автоматически включается в окружении Development. Дополнительно
+можно включить его в Production через переменную окружения.
+
+- Эндпоинты:
+    - UI: http(s)://<host>/swagger
+    - JSON: http(s)://<host>/swagger/v1/swagger.json
+
+- Как включить в Production:
+    1) В файле .env задайте:
+       SWAGGER_ENABLED=true
+    2) Перезапустите сервис (локально или через Docker Compose).
+
+- Метаданные:
+    - Title: ExiledProject CMS API
+    - Version: v1
+
+Примечания:
+
+- В docker-compose по умолчанию ASPNETCORE_ENVIRONMENT=Development, поэтому Swagger уже доступен по /swagger.
+- Если вы меняете окружение на Production, включайте Swagger только при необходимости (например, на стендах), выставив
+  SWAGGER_ENABLED=true.
