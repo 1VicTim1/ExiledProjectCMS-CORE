@@ -1,0 +1,103 @@
+version: "3.8"
+
+services:
+  mainapi:
+    build:
+      context: ./src/MainApi
+      dockerfile: Dockerfile
+    container_name: mainapi
+    env_file:
+      - ./.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+    ports:
+      - "${API_PORT:-5190}:8080"
+    depends_on:
+      - ${DB_PROVIDER:-mysql}
+    networks:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    profiles: [ "mysql" ]
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - MYSQL_DATABASE=${DB_NAME:-exiledcms}
+      - MYSQL_USER=${DB_USER:-exiled}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-exiledpass}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:16
+    profiles: [ "postgresql", "postgres" ]
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=${DB_NAME:-exiledcms}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ -n "$PROMETHEUS_WEB_USER" ] && [ -n "$PROMETHEUS_WEB_PASSWORD_BCRYPT" ]; then
+          cat > /etc/prometheus/web.yml <<EOF
+        basic_auth_users:
+          $PROMETHEUS_WEB_USER: $PROMETHEUS_WEB_PASSWORD_BCRYPT
+        EOF
+          exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.config.file=/etc/prometheus/web.yml --web.enable-admin-api
+        else
+          echo "Prometheus basic auth disabled (set PROMETHEUS_WEB_USER and PROMETHEUS_WEB_PASSWORD_BCRYPT to enable)."
+          exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.enable-admin-api
+        fi
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - backend
+    depends_on:
+      - mainapi
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=${GRAFANA_INSTALL_PLUGINS:-}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+
+networks:
+  backend:
+
+volumes:
+  mysql_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:

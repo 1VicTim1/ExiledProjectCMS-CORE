@@ -5,126 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="29f2252b-175b-4d29-afbf-2e8e33ce87e2" name="Changes" comment="asd">
-      <change beforePath="$PROJECT_DIR$/.dockerignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/API_Examples.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ARCHITECTURE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/Controllers/AdminController.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/Controllers/AuthController.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/Controllers/NewsController.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/ExiledProjectCMS.API.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/ExiledProjectCMS.API.http" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/Program.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/Properties/launchSettings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/appsettings.Development.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.API/appsettings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/Auth/AuthErrorResponseSwagger.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/Auth/AuthRequest.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/Auth/AuthResponse.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/Auth/AuthSuccessResponseSwagger.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/Auth/RegisterRequest.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/Auth/RegisterResponse.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/News/NewsResponse.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/DTOs/News/NewsResponseSwagger.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/ExiledProjectCMS.Application.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/Services/AuthService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/Services/IAuthService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/Services/INewsService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Application/Services/NewsService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Entities/News.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Entities/Permission.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Entities/Role.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Entities/RolePermission.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Entities/User.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Entities/UserRole.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/ExiledProjectCMS.Core.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Interfaces/ICacheService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Interfaces/IPlugin.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Interfaces/IPluginManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Repositories/INewsRepository.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Core/Repositories/IUserRepository.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Commands/CreateAdminCommand.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Configuration/DatabaseConfiguration.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Data/ApplicationDbContext.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/ExiledProjectCMS.Infrastructure.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Migrations/20250930172910_InitialCreate.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Migrations/20250930172910_InitialCreate.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Repositories/NewsRepository.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Repositories/UserRepository.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Services/MemoryCacheService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.Infrastructure/Services/RedisCacheService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.sln" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ExiledProjectCMS.sln.DotSettings.user" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/admin-panel/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/admin-panel/nginx.conf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/admin-panel/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/admin-panel/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/EmailService/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/EmailService/go.mod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/EmailService/go.sum" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/EmailService/main.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/HighPerformanceAPI/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/HighPerformanceAPI/go.mod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/HighPerformanceAPI/go.sum" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/HighPerformanceAPI/main.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/SkinsCapesService/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/SkinsCapesService/go.mod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GoServices/SkinsCapesService/main.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/INSTALLATION_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/INSTALLATION_GUIDE_UNIVERSAL.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README_INSTALLER.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SSL_IMPLEMENTATION_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SUMMARY_INSTALLER.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SWAGGER_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TROUBLESHOOTING_BUILD.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TestData.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/check-all.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/check-service.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo-config.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/deploy-distributed.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/diagnose-failures.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.distributed.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/base-ssl.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/base.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/cache-redis-ssl.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/cache-redis.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/database-mysql.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/database-postgres-ssl.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/database-postgres.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/database-sqlserver.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/frontend.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/loadbalancer-ssl.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/loadbalancer.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/monitoring.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/services-email.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/services-go-ssl.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/services-go.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-templates/services-skins.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/fix-go-services.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install-distributed.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install-interactive.ps1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install-interactive.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install-service.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install-single.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install-universal.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install.ps1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/quick-status-check.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/generate-certificates.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/service-configs/cms-api-ssl.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/service-configs/go-api-ssl.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/service-configs/nginx-ssl.conf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/service-configs/redis-ssl.conf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/ssl-demo.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssl-infrastructure/ssl-integration.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-all-api.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-deployment.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-skins-capes-fix.sh" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -163,6 +48,10 @@
     &quot;accountId&quot;: &quot;fc55c5dd-45df-4dec-9cc4-db1e90ec2670&quot;
   }
 }</component>
+  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
+  <component name="KubernetesApiProvider"><![CDATA[{
+  "isMigrated": true
+}]]></component>
   <component name="MaliciousPackageCheckinHandlerState">
     <option name="packageCheck" value="true" />
   </component>
@@ -249,6 +138,17 @@
   </component>
   <component name="UpdateCopyrightCheckinHandler">
     <option name="UPDATE_COPYRIGHT" value="true" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_CLEANUP_BEFORE_PROJECT_COMMIT_PROFILE" value="Project Default" />
