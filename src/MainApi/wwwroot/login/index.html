@@ -96,13 +96,15 @@
 </head>
 <body>
 <div class="container">
-    <h1>Вход</h1>
-    <label>Логин</label>
-    <input id="login" placeholder="admin"/>
-    <label>Пароль</label>
-    <input id="password" placeholder="••••••••" type="password"/>
-    <button id="btnLogin">Войти</button>
-    <div class="note" id="msg"></div>
+    <form id="loginForm">
+        <h1>Вход</h1>
+        <label>Логин</label>
+        <input id="login" placeholder="admin"/>
+        <label>Пароль</label>
+        <input id="password" placeholder="••••••••" type="password"/>
+        <button id="btnLogin" type="submit">Войти</button>
+        <div class="note" id="msg"></div>
+    </form>
 
     <div id="setup2fa" style="display:none; margin-top: 20px;">
         <h1>Привязка 2FA</h1>
@@ -119,7 +121,18 @@
     const $ = id => document.getElementById(id);
     const base = '';
 
-    $('btnLogin').onclick = async () => {
+    // Prevent form submission and handle login
+    $('loginForm').onsubmit = async (e) => {
+        e.preventDefault();
+        await handleLogin();
+    };
+
+    $('btnLogin').onclick = async (e) => {
+        e.preventDefault();
+        await handleLogin();
+    };
+
+    async function handleLogin() {
         $('msg').className = 'note';
         $('msg').textContent = 'Выполняется вход...';
         const payload = {login: $('login').value.trim(), password: $('password').value};
@@ -151,7 +164,7 @@
             $('msg').className = 'error';
             $('msg').textContent = t.Message || `Ошибка: ${r.status}`;
         }
-    };
+    }
 
     $('btnVerify').onclick = async () => {
         const login = $('login').value.trim();
