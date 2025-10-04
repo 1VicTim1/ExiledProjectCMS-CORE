@@ -70,7 +70,10 @@ internal static class AppHelpers
                 Login = adminLogin,
                 PasswordSalt = adminSalt,
                 PasswordHash = PasswordHasher.HashPassword(adminPassword, adminSalt),
-                Require2FA = adminRequire2FA,
+                // Initial admin must set up 2FA on first login
+                Require2FA = false,
+                TwoFactorEnabled = false,
+                MustSetup2FA = true,
                 IsBanned = adminIsBanned,
                 BanReason = string.IsNullOrWhiteSpace(adminBanReason) ? null : adminBanReason
             });

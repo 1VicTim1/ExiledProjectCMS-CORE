@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="29f2252b-175b-4d29-afbf-2e8e33ce87e2" name="Changes" comment="asd">
+      <change afterPath="$PROJECT_DIR$/src/MainApi/wwwroot/login/index.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/cleanup_db_mysql.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/MainApi/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.cs" afterDir="false" />
     </list>

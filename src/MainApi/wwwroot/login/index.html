@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>Вход — ExiledCMS</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 8vh auto;
+            background: #111827;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 14px;
+            color: #f8fafc;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin: 12px 0 6px;
+            color: #cbd5e1;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0b1220;
+            color: #e2e8f0;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 16px;
+            padding: 10px 12px;
+            background: #2563eb;
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+
+        .error {
+            color: #fca5a5;
+            margin-top: 8px;
+        }
+
+        .success {
+            color: #86efac;
+            margin-top: 8px;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+            margin: 12px 0;
+            border-radius: 8px;
+        }
+
+        .code {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .code input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Вход</h1>
+    <label>Логин</label>
+    <input id="login" placeholder="admin"/>
+    <label>Пароль</label>
+    <input id="password" placeholder="••••••••" type="password"/>
+    <button id="btnLogin">Войти</button>
+    <div class="note" id="msg"></div>
+
+    <div id="setup2fa" style="display:none; margin-top: 20px;">
+        <h1>Привязка 2FA</h1>
+        <div id="qrcode"></div>
+        <div class="note">Отсканируйте QR-код в Google Authenticator, затем введите 6-значный код ниже.</div>
+        <div class="code">
+            <input id="code" placeholder="123456"/>
+            <button id="btnVerify">Подтвердить</button>
+        </div>
+        <div class="note" id="secret"></div>
+    </div>
+</div>
+<script>
+    const $ = id => document.getElementById(id);
+    const base = '';
+
+    $('btnLogin').onclick = async () => {
+        $('msg').className = 'note';
+        $('msg').textContent = 'Выполняется вход...';
+        const payload = {login: $('login').value.trim(), password: $('password').value};
+        const r = await fetch(`${base}/api/web/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const t = await r.json().catch(() => ({}));
+        if (r.status === 200) {
+            $('msg').className = 'success';
+            $('msg').textContent = 'Успешная авторизация.';
+        } else if (r.status === 403 && t.Next === 'setup-2fa') {
+            $('msg').className = 'note';
+            $('msg').textContent = 'Требуется привязка 2FA. Генерируем секрет...';
+            const s = await fetch(`${base}/api/web/2fa/start`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({login: payload.login, issuer: 'ExiledCMS'})
+            });
+            const sj = await s.json();
+            $('setup2fa').style.display = 'block';
+            $('secret').textContent = `Секрет: ${sj.Secret}`;
+            const q = document.createElement('img');
+            q.src = sj.QrCodeDataUrl;
+            $('qrcode').innerHTML = '';
+            $('qrcode').appendChild(q);
+        } else {
+            $('msg').className = 'error';
+            $('msg').textContent = t.Message || `Ошибка: ${r.status}`;
+        }
+    };
+
+    $('btnVerify').onclick = async () => {
+        const login = $('login').value.trim();
+        const code = $('code').value.trim();
+        const r = await fetch(`${base}/api/web/2fa/verify`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({login, code})
+        });
+        const t = await r.json().catch(() => ({}));
+        if (r.ok) {
+            $('msg').className = 'success';
+            $('msg').textContent = '2FA привязана. Теперь вход выполняется с кодом 2FA.';
+            $('setup2fa').style.display = 'none';
+        } else {
+            $('msg').className = 'error';
+            $('msg').textContent = t.Message || 'Неверный код';
+        }
+    };
+</script>
+</body>
+</html>

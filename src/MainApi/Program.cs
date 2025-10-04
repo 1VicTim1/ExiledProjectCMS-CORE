@@ -148,11 +148,15 @@ app.MapPost("/api/v1/integrations/auth/signin", async (AuthRequest request, IUse
         return Results.Json(new { Message = msg }, statusCode: StatusCodes.Status403Forbidden); // 403
     }
 
-    // If 2FA is required, GML expects 401 with a specific message prompting 2FA input
+    // Enforce initial 2FA setup for accounts that must set it up (e.g., first admin login)
+    if (user.MustSetup2FA && !user.TwoFactorEnabled)
+    {
+        return Results.Json(new { Message = "Аккаунт заблокирован до привязки 2FA. Перейдите к настройке двухфакторной аутентификации." }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    // If 2FA is required, GML expects 401 with a message prompting 2FA input
     if (user.Require2FA)
     {
-        // As per docs, 401 with this message triggers client to ask for 2FA code.
-        // Later we can extend the contract to accept and validate a TwoFactorCode.
         return Results.Json(new { Message = "Введите проверочный код 2FA" }, statusCode: StatusCodes.Status401Unauthorized); // 401
     }
 
@@ -185,6 +189,78 @@ app.MapGet("/api/news", async (int? limit, int? offset, INewsRepository newsRepo
     return Results.Ok(shaped);
 });
 
+// --- Minimal Web login endpoints (for initial admin 2FA setup) ---
+app.MapPost("/api/web/login", async (AuthRequest request, IUserRepository users) =>
+{
+    var user = await users.FindByLoginAsync(request.Login);
+    if (user is null) return Results.NotFound(new { Message = "Пользователь не найден" });
+
+    if (!PasswordHasher.VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
+        return Results.Json(new { Message = "Неверный логин или пароль" }, statusCode: StatusCodes.Status401Unauthorized);
+
+    if (user.IsBanned)
+    {
+        var msg = string.IsNullOrWhiteSpace(user.BanReason) ? "Пользователь заблокирован" : $"Пользователь заблокирован. Причина: {user.BanReason}";
+        return Results.Json(new { Message = msg }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    if (user.MustSetup2FA && !user.TwoFactorEnabled)
+    {
+        return Results.Json(new { Next = "setup-2fa", Message = "Требуется настроить 2FA" }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    if (user.Require2FA)
+    {
+        return Results.Json(new { Next = "enter-2fa", Message = "Введите код 2FA" }, statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    return Results.Ok(new { Message = "Успешная авторизация" });
+});
+
+app.MapPost("/api/web/2fa/start", async (TwoFaStartRequest req, IUserRepository users) =>
+{
+    var user = await users.FindByLoginAsync(req.Login);
+    if (user is null) return Results.NotFound(new { Message = "Пользователь не найден" });
+
+    // Generate secret and QR
+    var secretKey = KeyGeneration.GenerateRandomKey(20); // 160-bit
+    var base32Secret = Base32Encoding.ToString(secretKey);
+    user.TwoFactorSecret = base32Secret;
+    user.TwoFactorEnabled = false;
+    await users.UpdateAsync(user);
+
+    var issuer = Uri.EscapeDataString(req.Issuer ?? "ExiledCMS");
+    var account = Uri.EscapeDataString(user.Login);
+    var otpauth = $"otpauth://totp/{issuer}:{account}?secret={base32Secret}&issuer={issuer}&digits=6&period=30&algorithm=SHA1";
+
+    // Create QR PNG as data URL
+    using var qrGen = new QRCodeGenerator();
+    var qrData = qrGen.CreateQrCode(otpauth, QRCodeGenerator.ECCLevel.Q);
+    using var qrCode = new PngByteQRCode(qrData);
+    var png = qrCode.GetGraphic(10);
+    var dataUrl = "data:image/png;base64," + Convert.ToBase64String(png);
+
+    return Results.Ok(new { Secret = base32Secret, OtpauthUri = otpauth, QrCodeDataUrl = dataUrl });
+});
+
+app.MapPost("/api/web/2fa/verify", async (TwoFaVerifyRequest req, IUserRepository users) =>
+{
+    var user = await users.FindByLoginAsync(req.Login);
+    if (user is null) return Results.NotFound(new { Message = "Пользователь не найден" });
+    if (string.IsNullOrWhiteSpace(user.TwoFactorSecret)) return Results.BadRequest(new { Message = "2FA не инициализирована" });
+
+    var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+    var isValid = totp.VerifyTotp(req.Code?.Trim() ?? string.Empty, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
+    if (!isValid) return Results.Json(new { Message = "Неверный код 2FA" }, statusCode: StatusCodes.Status401Unauthorized);
+
+    user.TwoFactorEnabled = true;
+    user.Require2FA = true;
+    user.MustSetup2FA = false;
+    await users.UpdateAsync(user);
+
+    return Results.Ok(new { Message = "2FA успешно привязана" });
+});
+
 app.Run();
 
 // DTOs and domain below for single-file simplicity. In a real project, split by folders.
@@ -193,6 +269,18 @@ record AuthRequest
 {
     public string Login { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
+}
+
+record TwoFaStartRequest
+{
+    public string Login { get; init; } = string.Empty;
+    public string? Issuer { get; init; }
+}
+
+record TwoFaVerifyRequest
+{
+    public string Login { get; init; } = string.Empty;
+    public string? Code { get; init; }
 }
 
 class User

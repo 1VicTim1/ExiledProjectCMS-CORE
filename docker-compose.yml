@@ -82,6 +82,23 @@ services:
     depends_on:
       - prometheus
 
+  phpmyadmin:
+    image: phpmyadmin:5
+    profiles: [ "mysql", "pma" ]
+    container_name: phpmyadmin
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=${DB_USER:-root}
+      - PMA_PASSWORD=${MYSQL_ROOT_PASSWORD:-}
+      - UPLOAD_LIMIT=256M
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    depends_on:
+      - mysql
+    networks:
+      - backend
+
 networks:
   backend:
 
