@@ -359,7 +359,11 @@ docker compose --profile mysql --profile pma up -d
 ```
 
 - Доступ: http://localhost:${PHPMYADMIN_PORT:-8081}
-- Логин/пароль: зависят от вашей БД. Если подключаетесь к root в контейнере MySQL — используйте MYSQL_ROOT_PASSWORD.
+- Логин/пароль: теперь всегда запрашиваются на экране входа (мы не передаём PMA_USER/PMA_PASSWORD в контейнер).
+  Введите учётные данные вашей БД:
+    - если используете не-root пользователя: DB_USER / DB_PASSWORD из .env (и этот пользователь должен существовать в
+      БД);
+    - если входите под root: логин root и пароль MYSQL_ROOT_PASSWORD (из .env, профиль mysql).
 - Переменная порта: PHPMYADMIN_PORT в .env (по умолчанию 8081).
 
 Примечание: phpMyAdmin вообще не запускается, если вы используете PostgreSQL или локальную БД вне контейнеров и не
@@ -394,3 +398,23 @@ docker exec -i mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$DB_NAME" < tests/cl
   указан иначе) — это упрощает запуск в Docker Compose.
 
 ---
+
+
+---
+
+### Обновление примера .env
+
+В .env.example добавлены/уточнены переменные:
+
+- MYSQL_PORT — проброс порта MySQL в Docker Compose (по умолчанию 3306).
+- POSTGRES_PORT — проброс порта PostgreSQL в Docker Compose (по умолчанию 5432).
+- PHPMYADMIN_PORT — порт phpMyAdmin (активен при запуске профиля pma), по умолчанию 8081.
+- GRAFANA_INSTALL_PLUGINS — список плагинов Grafana для автоматической установки (необязательно).
+- Подсказка по ASPNETCORE_ENVIRONMENT — можно установить Development, чтобы всегда был доступен Swagger в контейнере.
+
+Напоминание по безопасности Prometheus UI:
+
+- Чтобы Prometheus требовал логин/пароль, задайте в .env обе переменные: PROMETHEUS_WEB_USER и
+  PROMETHEUS_WEB_PASSWORD_BCRYPT
+  (пароль в bcrypt; сгенерируйте через htpasswd -nB -C 10 <user>). Если переменные не заданы, UI будет доступен без
+  авторизации.
