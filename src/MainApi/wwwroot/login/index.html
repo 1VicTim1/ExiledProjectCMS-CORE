@@ -141,11 +141,22 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
-        const t = await r.json().catch(() => ({}));
+
+        let t = {};
+        try {
+            t = await r.json();
+        } catch (error) {
+            console.error('JSON parse error:', error);
+            $('msg').className = 'error';
+            $('msg').textContent = 'Ошибка парсинга ответа сервера';
+            return;
+        }
+
+        console.log('Server response:', r.status, t);
         if (r.status === 200) {
             $('msg').className = 'success';
             $('msg').textContent = 'Успешная авторизация.';
-        } else if (r.status === 403 && t.Next === 'setup-2fa') {
+        } else if (r.status === 403 && t.next === 'setup-2fa') {
             $('msg').className = 'note';
             $('msg').textContent = 'Требуется привязка 2FA. Генерируем секрет...';
             const s = await fetch(`${base}/api/web/2fa/start`, {
@@ -162,7 +173,7 @@
             $('qrcode').appendChild(q);
         } else {
             $('msg').className = 'error';
-            $('msg').textContent = t.Message || `Ошибка: ${r.status}`;
+            $('msg').textContent = t.message || `Ошибка: ${r.status}`;
         }
     }
 
@@ -181,7 +192,7 @@
             $('setup2fa').style.display = 'none';
         } else {
             $('msg').className = 'error';
-            $('msg').textContent = t.Message || 'Неверный код';
+            $('msg').textContent = t.message || 'Неверный код';
         }
     };
 </script>
