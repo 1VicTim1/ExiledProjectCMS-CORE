@@ -4,6 +4,8 @@ using Prometheus;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using QRCoder;
+using OtpNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +90,10 @@ if (app.Environment.IsDevelopment() || swaggerEnabled)
         c.RoutePrefix = "swagger"; // served at /swagger
     });
 }
+
+// Static files for minimal frontend
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 // Optional HTTPS redirection (disabled by default for containers)
 var httpsRedirectEnabled = string.Equals(Environment.GetEnvironmentVariable("HTTPS_REDIRECT_ENABLED"), "true", StringComparison.OrdinalIgnoreCase);
@@ -199,6 +205,10 @@ class User
     public bool IsBanned { get; set; }
     public string? BanReason { get; set; }
     public Guid UserUuid { get; set; } = Guid.NewGuid();
+    // 2FA fields
+    public string? TwoFactorSecret { get; set; }
+    public bool TwoFactorEnabled { get; set; }
+    public bool MustSetup2FA { get; set; }
 }
 
 class NewsItem
@@ -212,6 +222,7 @@ class NewsItem
 interface IUserRepository
 {
     Task<User?> FindByLoginAsync(string login);
+    Task UpdateAsync(User user);
 }
 
 interface INewsRepository
@@ -238,7 +249,9 @@ class InMemoryUserRepository : IUserRepository
             Login = adminLogin,
             PasswordSalt = adminSalt,
             PasswordHash = PasswordHasher.HashPassword(adminPassword, adminSalt),
-            Require2FA = adminRequire2FA,
+            Require2FA = false,
+            TwoFactorEnabled = false,
+            MustSetup2FA = true,
             IsBanned = adminIsBanned,
             BanReason = string.IsNullOrWhiteSpace(adminBanReason) ? null : adminBanReason
         });
@@ -269,6 +282,24 @@ class InMemoryUserRepository : IUserRepository
     {
         var user = _users.FirstOrDefault(u => string.Equals(u.Login, login, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(user);
+    }
+
+    public Task UpdateAsync(User user)
+    {
+        var existing = _users.FirstOrDefault(u => u.Id == user.Id || string.Equals(u.Login, user.Login, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            existing.PasswordHash = user.PasswordHash;
+            existing.PasswordSalt = user.PasswordSalt;
+            existing.Require2FA = user.Require2FA;
+            existing.IsBanned = user.IsBanned;
+            existing.BanReason = user.BanReason;
+            existing.UserUuid = user.UserUuid;
+            existing.TwoFactorSecret = user.TwoFactorSecret;
+            existing.TwoFactorEnabled = user.TwoFactorEnabled;
+            existing.MustSetup2FA = user.MustSetup2FA;
+        }
+        return Task.CompletedTask;
     }
 }
 
@@ -345,6 +376,9 @@ class MainDbContext : DbContext
         user.Property(u => u.IsBanned).IsRequired();
         user.Property(u => u.BanReason).HasMaxLength(512);
         user.Property(u => u.UserUuid).IsRequired();
+        user.Property(u => u.TwoFactorSecret).HasMaxLength(200);
+        user.Property(u => u.TwoFactorEnabled).IsRequired();
+        user.Property(u => u.MustSetup2FA).IsRequired();
 
         var news = modelBuilder.Entity<NewsItem>();
         news.ToTable("news");
@@ -364,6 +398,12 @@ class EfUserRepository : IUserRepository
     public Task<User?> FindByLoginAsync(string login)
     {
         return _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Login.ToLower() == login.ToLower());
+    }
+
+    public async Task UpdateAsync(User user)
+    {
+        _db.Users.Update(user);
+        await _db.SaveChangesAsync();
     }
 }
 
