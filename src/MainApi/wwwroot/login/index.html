@@ -142,21 +142,28 @@
             body: JSON.stringify(payload)
         });
 
+        console.log('Response status:', r.status);
+        console.log('Response headers:', [...r.headers.entries()]);
+
+        const responseText = await r.text();
+        console.log('Raw response text:', responseText);
+
         let t = {};
         try {
-            t = await r.json();
+            t = JSON.parse(responseText);
+            console.log('Parsed JSON:', t);
         } catch (error) {
             console.error('JSON parse error:', error);
+            console.log('Failed to parse text:', responseText);
             $('msg').className = 'error';
-            $('msg').textContent = 'Ошибка парсинга ответа сервера';
+            $('msg').textContent = 'Ошибка парсинга ответа сервера: ' + responseText.substring(0, 100);
             return;
         }
-
-        console.log('Server response:', r.status, t);
         if (r.status === 200) {
             $('msg').className = 'success';
             $('msg').textContent = 'Успешная авторизация.';
         } else if (r.status === 403 && t.next === 'setup-2fa') {
+            console.log('Setting up 2FA...');
             $('msg').className = 'note';
             $('msg').textContent = 'Требуется привязка 2FA. Генерируем секрет...';
             const s = await fetch(`${base}/api/web/2fa/start`, {
@@ -172,6 +179,7 @@
             $('qrcode').innerHTML = '';
             $('qrcode').appendChild(q);
         } else {
+            console.log('Login failed. Status:', r.status, 'next field:', t.next, 'message:', t.message);
             $('msg').className = 'error';
             $('msg').textContent = t.message || `Ошибка: ${r.status}`;
         }
