@@ -133,14 +133,18 @@
     };
 
     async function handleLogin() {
-        $('msg').className = 'note';
-        $('msg').textContent = 'Выполняется вход...';
-        const payload = {login: $('login').value.trim(), password: $('password').value};
-        const r = await fetch(`${base}/api/web/login`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
+        try {
+            $('msg').className = 'note';
+            $('msg').textContent = 'Выполняется вход...';
+            const payload = {login: $('login').value.trim(), password: $('password').value};
+
+            console.log('Making login request...');
+            const r = await fetch(`${base}/api/web/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            console.log('Request completed');
 
         console.log('Response status:', r.status);
         console.log('Response headers:', [...r.headers.entries()]);
@@ -182,6 +186,11 @@
             console.log('Login failed. Status:', r.status, 'next field:', t.next, 'message:', t.message);
             $('msg').className = 'error';
             $('msg').textContent = t.message || `Ошибка: ${r.status}`;
+        }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            $('msg').className = 'error';
+            $('msg').textContent = 'Ошибка сети: ' + error.message;
         }
     }
 
