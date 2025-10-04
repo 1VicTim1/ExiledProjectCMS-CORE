@@ -28,9 +28,18 @@ var dbConfigured = false;
 
 if (dbProvider == "mysql")
 {
-    var conn = AppHelpers.BuildMySqlConnectionString(dbHost, dbPort, dbName, dbUser, dbPassword);
+    // If using MySQL root user, use the root password from MYSQL_ROOT_PASSWORD to avoid mismatch with DB_PASSWORD
+    var effectivePassword = dbPassword;
+    if (!string.IsNullOrWhiteSpace(dbUser) && dbUser.Equals("root", StringComparison.OrdinalIgnoreCase))
+    {
+        var rootPwd = Environment.GetEnvironmentVariable("MYSQL_ROOT_PASSWORD");
+        if (!string.IsNullOrWhiteSpace(rootPwd))
+        {
+            effectivePassword = rootPwd;
+        }
+    }
+    var conn = AppHelpers.BuildMySqlConnectionString(dbHost, dbPort, dbName, dbUser, effectivePassword);
     // Avoid opening a DB connection during service registration (ServerVersion.AutoDetect connects immediately).
-    // Allow overriding server version via MYSQL_SERVER_VERSION (e.g., 8.0.0). Defaults to 8.0.0.
     // Use Pomelo's ServerVersion.AutoDetect for broad compatibility across package versions.
     builder.Services.AddDbContext<MainDbContext>(options =>
         options.UseMySql(conn, ServerVersion.AutoDetect(conn)));

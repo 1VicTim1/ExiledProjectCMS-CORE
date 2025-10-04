@@ -53,7 +53,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.54.1
     container_name: prometheus
-    command: [ "/bin/sh", "/etc/prometheus/entrypoint.sh" ]
+    entrypoint: [ "/bin/sh", "/etc/prometheus/entrypoint.sh" ]
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/entrypoint.sh:/etc/prometheus/entrypoint.sh:ro
