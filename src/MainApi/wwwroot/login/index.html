@@ -1,327 +1,217 @@
 <!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width,initial-scale=1" name="viewport"/>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Вход — ExiledCMS</title>
     <style>
         body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
             background: #0f172a;
             color: #e2e8f0;
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
-            margin: 0;
-            min-height: 100vh;
         }
 
-        .login-box {
+        .container {
+            max-width: 420px;
+            margin: 8vh auto;
             background: #111827;
-            max-width: 360px;
-            margin: 10vh auto;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-            padding: 32px 28px 24px 28px;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
         }
         h1 {
-            margin: 0 0 18px 0;
-            font-size: 22px;
+            font-size: 20px;
+            margin: 0 0 14px;
             color: #f8fafc;
-            font-weight: 600;
-            letter-spacing: 0.5px;
         }
         label {
             display: block;
-            margin: 16px 0 6px 0;
             font-size: 14px;
+            margin: 12px 0 6px;
             color: #cbd5e1;
         }
 
-        input[type="text"], input[type="password"], input[type="number"] {
+        input {
             width: 100%;
             padding: 10px 12px;
-            border-radius: 7px;
+            border-radius: 8px;
             border: 1px solid #334155;
             background: #0b1220;
             color: #e2e8f0;
-            font-size: 15px;
-            box-sizing: border-box;
         }
         button {
             width: 100%;
-            margin-top: 22px;
-            padding: 11px 0;
+            margin-top: 16px;
+            padding: 10px 12px;
             background: #2563eb;
             color: #fff;
-            border: none;
-            border-radius: 7px;
-            font-size: 16px;
-            font-weight: 500;
+            border: 0;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.15s;
         }
         button:disabled {
-            opacity: 0.6;
+            opacity: .6;
             cursor: not-allowed;
         }
 
-        .msg {
-            margin-top: 18px;
-            font-size: 14px;
-            min-height: 18px;
-        }
-
-        .msg.error {
-            color: #fca5a5;
-        }
-
-        .msg.success {
-            color: #86efac;
-        }
-
-        .msg.info {
+        .note {
+            font-size: 13px;
             color: #94a3b8;
-        }
-
-        .qr-block {
-            text-align: center;
-            margin: 18px 0 0 0;
-        }
-
-        .qr-block img {
-            margin: 0 auto 10px auto;
-            display: block;
-            width: 180px;
-            height: 180px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
-        }
-
-        .qr-secret {
-            font-size: 13px;
-            color: #a3e635;
-            word-break: break-all;
-            margin-bottom: 8px;
-        }
-
-        .back-link {
-            display: inline-block;
             margin-top: 10px;
-            color: #60a5fa;
-            font-size: 13px;
-            cursor: pointer;
-            text-decoration: underline;
+        }
+
+        .error {
+            color: #fca5a5;
+            margin-top: 8px;
+        }
+
+        .success {
+            color: #86efac;
+            margin-top: 8px;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+            margin: 12px 0;
+            border-radius: 8px;
+        }
+
+        .code {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .code input {
+            flex: 1;
         }
     </style>
 </head>
 <body>
-<div class="login-box">
-    <form autocomplete="off" id="loginForm">
-        <h1>Вход</h1>
-        <div id="step-login">
-            <label for="login">Логин</label>
-            <input autocomplete="username" autofocus id="login" required type="text">
-            <label for="password">Пароль</label>
-            <input autocomplete="current-password" id="password" required type="password">
-            <button id="btnLogin" type="submit">Войти</button>
+<div class="container">
+    <h1>Вход</h1>
+    <label>Логин</label>
+    <input id="login" placeholder="admin">
+    <label>Пароль</label>
+    <input id="password" placeholder="••••••••" type="password">
+    <button id="btnLogin">Войти</button>
+    <div class="error" id="msg"></div>
+
+    <div id="setup2fa" style="display:none; margin-top: 20px;">
+        <h1>Привязка 2FA</h1>
+        <div id="qrcode"></div>
+        <div class="note">Отсканируйте QR-код в Google Authenticator, затем введите 6-значный код ниже.</div>
+        <div class="code">
+            <input id="code" placeholder="123456">
+            <button id="btnVerify">Подтвердить</button>
         </div>
-        <div id="step-2fa" style="display:none">
-            <label for="code2fa">Введите код 2FA</label>
-            <input autocomplete="one-time-code" id="code2fa" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required
-                   type="text">
-            <button id="btn2fa" type="button">Проверить код</button>
-            <div class="back-link" id="backToLogin" tabindex="0">← Назад</div>
-        </div>
-        <div id="step-setup2fa" style="display:none">
-            <div class="qr-block">
-                <div id="qr"></div>
-                <div class="qr-secret" id="qrSecret"></div>
-                <div style="font-size:13px;color:#94a3b8;margin-bottom:8px;">Отсканируйте QR-код в Google Authenticator
-                    или аналоге.<br>Если не получается — введите секрет вручную.
-                </div>
-            </div>
-            <label for="code2faSetup">Введите код из приложения</label>
-            <input autocomplete="one-time-code" id="code2faSetup" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required
-                   type="text">
-            <button id="btn2faSetup" type="button">Привязать 2FA</button>
-            <div class="back-link" id="backToLogin2" tabindex="0">← Назад</div>
-        </div>
-        <div class="msg" id="msg"></div>
-    </form>
+        <div class="note" id="secret"></div>
+    </div>
 </div>
 <script>
     const $ = id => document.getElementById(id);
 
-    let currentLogin = '';
-    let currentPassword = '';
-    let setup2faSecret = '';
-
-    function showStep(step) {
-        $('step-login').style.display = step === 'login' ? '' : 'none';
-        $('step-2fa').style.display = step === '2fa' ? '' : 'none';
-        $('step-setup2fa').style.display = step === 'setup2fa' ? '' : 'none';
-        $('msg').textContent = '';
-        $('msg').className = 'msg';
-        if (step === 'login') {
-            $('login').focus();
-        } else if (step === '2fa') {
-            $('code2fa').focus();
-        } else if (step === 'setup2fa') {
-            $('code2faSetup').focus();
-        }
+    // Сбросить 2FA форму
+    function hide2fa() {
+        $('setup2fa').style.display = 'none';
+        $('qrcode').innerHTML = '';
+        $('secret').textContent = '';
+        $('code').value = '';
     }
 
-    $('loginForm').onsubmit = async e => {
-        e.preventDefault();
-        $('btnLogin').disabled = true;
-        $('msg').className = 'msg info';
-        $('msg').textContent = 'Проверяем...';
+    $('btnLogin').onclick = async () => {
+        hide2fa();
+        $('msg').className = 'note';
+        $('msg').textContent = 'Выполняется вход...';
         const login = $('login').value.trim();
         const password = $('password').value;
-        currentLogin = login;
-        currentPassword = password;
+        if (!login || !password) {
+            $('msg').className = 'error';
+            $('msg').textContent = 'Введите логин и пароль';
+            return;
+        }
+        const payload = {login, password};
+        let r, t;
         try {
-            const resp = await fetch('/api/web/login', {
+            r = await fetch('/api/web/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login, password})
+                body: JSON.stringify(payload)
             });
-            let data = {};
-            try {
-                data = await resp.json();
-            } catch {
-            }
-            // --- Исправлено: переход к setup-2fa при наличии поля next вне зависимости от кода ---
-            if (data.Next === 'setup-2fa') {
-                await start2faSetup(login);
-            } else if (data.Next === 'enter-2fa') {
-                showStep('2fa');
-            } else if (resp.ok) {
-                $('msg').className = 'msg success';
-                $('msg').textContent = data.message || 'Вход выполнен';
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                $('msg').className = 'msg error';
-                $('msg').textContent = data.message || `Ошибка: ${resp.status}`;
-            }
-        } catch (err) {
-            $('msg').className = 'msg error';
-            $('msg').textContent = 'Ошибка сети: ' + (err.message || err);
+            t = await r.json().catch(() => ({}));
+        } catch (e) {
+            $('msg').className = 'error';
+            $('msg').textContent = 'Ошибка сети';
+            return;
         }
-        $('btnLogin').disabled = false;
+        if (r.status === 200) {
+            $('msg').className = 'success';
+            $('msg').textContent = 'Успешная авторизация.';
+            setTimeout(() => location.reload(), 1000);
+        } else if (t.Next === 'setup-2fa') {
+            $('msg').className = 'note';
+            $('msg').textContent = 'Требуется привязка 2FA. Генерируем секрет...';
+            try {
+                const s = await fetch('/api/web/2fa/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({login, issuer: 'ExiledCMS'})
+                });
+                const sj = await s.json();
+                $('setup2fa').style.display = 'block';
+                $('secret').textContent = `Секрет: ${sj.Secret}`;
+                const q = document.createElement('img');
+                q.src = sj.QrCodeDataUrl;
+                $('qrcode').innerHTML = '';
+                $('qrcode').appendChild(q);
+            } catch {
+                $('msg').className = 'error';
+                $('msg').textContent = 'Ошибка генерации QR-кода';
+            }
+        } else if (t.Next === 'enter-2fa') {
+            $('msg').className = 'note';
+            $('msg').textContent = 'Требуется код 2FA. Введите его на отдельной странице.';
+        } else {
+            $('msg').className = 'error';
+            $('msg').textContent = t.Message || `Ошибка: ${r.status}`;
+        }
     };
 
-    async function start2faSetup(login) {
-        $('msg').className = 'msg info';
-        $('msg').textContent = 'Генерируем QR-код...';
-        try {
-            const resp = await fetch('/api/web/2fa/start', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login, issuer: 'ExiledCMS'})
-            });
-            let data = {};
-            try {
-                data = await resp.json();
-            } catch {
-            }
-            if (resp.ok && data.QrCodeDataUrl && data.Secret) {
-                setup2faSecret = data.Secret;
-                $('qr').innerHTML = `<img src="${data.QrCodeDataUrl}" alt="QR-код 2FA">`;
-                $('qrSecret').textContent = data.Secret;
-                showStep('setup2fa');
-            } else {
-                $('msg').className = 'msg error';
-                $('msg').textContent = data.message || 'Ошибка генерации QR-кода';
-                showStep('login');
-            }
-        } catch (err) {
-            $('msg').className = 'msg error';
-            $('msg').textContent = 'Ошибка сети: ' + (err.message || err);
-            showStep('login');
-        }
-    }
-
-    $('btn2fa').onclick = async () => {
-        const code = $('code2fa').value.trim();
+    $('btnVerify').onclick = async () => {
+        const login = $('login').value.trim();
+        const code = $('code').value.trim();
         if (!/^\d{6}$/.test(code)) {
-            $('msg').className = 'msg error';
+            $('msg').className = 'error';
             $('msg').textContent = 'Введите корректный 6-значный код';
             return;
         }
-        $('btn2fa').disabled = true;
-        $('msg').className = 'msg info';
+        $('msg').className = 'note';
         $('msg').textContent = 'Проверяем код...';
+        let r, t;
         try {
-            // Для проверки 2FA нужен отдельный эндпоинт, но в текущей реализации его нет.
-            // Поэтому повторяем логин с паролем и кодом (если реализовано на сервере).
-            // Здесь предполагается, что сервер требует отдельный эндпоинт.
-            // Можно реализовать POST /api/web/2fa/verify, если сервер поддерживает.
-            const resp = await fetch('/api/web/2fa/verify', {
+            r = await fetch('/api/web/2fa/verify', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login: currentLogin, code})
+                body: JSON.stringify({login, code})
             });
-            let data = {};
-            try {
-                data = await resp.json();
-            } catch {
-            }
-            if (resp.ok) {
-                $('msg').className = 'msg success';
-                $('msg').textContent = data.message || 'Вход выполнен';
-                setTimeout(() => location.reload(), 1000);
-        } else {
-                $('msg').className = 'msg error';
-                $('msg').textContent = data.message || `Ошибка: ${resp.status}`;
-        }
-        } catch (err) {
-            $('msg').className = 'msg error';
-            $('msg').textContent = 'Ошибка сети: ' + (err.message || err);
-    }
-        $('btn2fa').disabled = false;
-    };
-
-    $('btn2faSetup').onclick = async () => {
-        const code = $('code2faSetup').value.trim();
-        if (!/^\d{6}$/.test(code)) {
-            $('msg').className = 'msg error';
-            $('msg').textContent = 'Введите корректный 6-значный код';
+            t = await r.json().catch(() => ({}));
+        } catch (e) {
+            $('msg').className = 'error';
+            $('msg').textContent = 'Ошибка сети';
             return;
         }
-        $('btn2faSetup').disabled = true;
-        $('msg').className = 'msg info';
-        $('msg').textContent = 'Проверяем код...';
-        try {
-            const resp = await fetch('/api/web/2fa/verify', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login: currentLogin, code})
-        });
-            let data = {};
-            try {
-                data = await resp.json();
-            } catch {
-            }
-            if (resp.ok) {
-                $('msg').className = 'msg success';
-                $('msg').textContent = data.message || '2FA успешно привязана';
-                setTimeout(() => location.reload(), 1000);
+        if (r.ok) {
+            $('msg').className = 'success';
+            $('msg').textContent = '2FA привязана. Теперь вход выполняется с кодом 2FA.';
+            hide2fa();
+            setTimeout(() => location.reload(), 1000);
         } else {
-                $('msg').className = 'msg error';
-                $('msg').textContent = data.message || `Ошибка: ${resp.status}`;
+            $('msg').className = 'error';
+            $('msg').textContent = t.Message || 'Неверный код';
         }
-        } catch (err) {
-            $('msg').className = 'msg error';
-            $('msg').textContent = 'Ошибка сети: ' + (err.message || err);
-        }
-        $('btn2faSetup').disabled = false;
-    };
-
-    $('backToLogin').onclick = () => showStep('login');
-    $('backToLogin2').onclick = () => showStep('login');
-
-    window.onload = () => {
-        showStep('login');
     };
 </script>
 </body>
