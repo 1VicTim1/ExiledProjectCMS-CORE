@@ -1,78 +1,39 @@
-# .gitignore for .NET, Go, Docker, and common IDEs
-
-# Build results
+# .NET
 bin/
 obj/
-*.exe
-*.dll
-*.pdb
-*.cache
-*.log
-*.vspscc
-*.vssscc
 *.user
 *.suo
+*.userosscache
 *.sln.docstates
-*.dbmdl
-*.dbmdl
-*.bak
-*.backup
-*.tmp
-*.temp
-*.swp
-*.swn
-*.swo
-*.DS_Store
 
-# Rider/JetBrains
+# Rider
 .idea/
 *.sln.iml
 
-# Visual Studio Code
-.vscode/
+# Node
+node_modules/
+dist/
+*.log
 
-# Test results
-TestResults/
+# Vite
+.vite/
 
-# NuGet
-*.nupkg
-.nuget/
-packages/
-project.lock.json
-project.fragment.lock.json
-artifacts/
+# Env
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Docker
-**/Dockerfile*
-**/docker-compose*
-.dockerignore
-
-# Go
-/go.sum
-/go.mod
-*.test
-*.out
-*.cover
-*.exe
-*.a
-vendor/
-
-# Monitoring/metrics
-monitoring/grafana/data/
-monitoring/prometheus/data/
-
-# OS generated files
-Thumbs.db
-Desktop.ini
+*.pid
+docker-compose.override.yml
 
 # Logs
 *.log
 logs/
 
-# Others
-*.env
-.env.*
-
-# Ignore secrets
-secrets.*
+# VSCode
+.vscode/
 

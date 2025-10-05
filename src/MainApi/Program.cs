@@ -163,8 +163,10 @@ app.MapPost("/api/v1/integrations/auth/signin", async (AuthRequest request, IUse
     var valid = PasswordHasher.VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt);
     if (!valid)
     {
+        await AppHelpers.LogAuditAsync(null, null, null, "login_fail", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
         return Results.Json(new { Message = "Неверный логин или пароль" }, statusCode: StatusCodes.Status401Unauthorized); // 401
     }
+    await AppHelpers.LogAuditAsync(null, null, null, "login_success", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
 
     // 200 OK — success (response body is optional per docs). Include helpful fields.
     return Results.Ok(new
@@ -190,13 +192,20 @@ app.MapGet("/api/news", async (int? limit, int? offset, INewsRepository newsRepo
 });
 
 // --- Minimal Web login endpoints (for initial admin 2FA setup) ---
-app.MapPost("/api/web/login", async (AuthRequest request, IUserRepository users) =>
+app.MapPost("/api/web/login", async (AuthRequest request, IUserRepository users, HttpContext http) =>
 {
     var user = await users.FindByLoginAsync(request.Login);
-    if (user is null) return Results.NotFound(new { Message = "Пользователь не найден" });
-
+    if (user is null)
+    {
+        await AppHelpers.LogAuditAsync(null, null, null, "web_login_fail", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
+        return Results.NotFound(new { Message = "Пользователь не найден" });
+    }
     if (!PasswordHasher.VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
+    {
+        await AppHelpers.LogAuditAsync(user.Id, null, null, "web_login_fail", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
         return Results.Json(new { Message = "Неверный логин или пароль" }, statusCode: StatusCodes.Status401Unauthorized);
+    }
+    await AppHelpers.LogAuditAsync(user.Id, null, null, "web_login_success", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
 
     if (user.IsBanned)
     {
@@ -261,6 +270,279 @@ app.MapPost("/api/web/2fa/verify", async (TwoFaVerifyRequest req, IUserRepositor
     return Results.Ok(new { Message = "2FA успешно привязана" });
 });
 
+// --- Role & Permission API ---
+app.MapGet("/api/roles", async (MainDbContext db) =>
+{
+    var roles = await db.Roles.Include(r => r.RolePermissions).ToListAsync();
+    return Results.Ok(roles);
+});
+
+app.MapGet("/api/permissions", async (MainDbContext db) =>
+{
+    var perms = await db.Permissions.Include(p => p.RolePermissions).ToListAsync();
+    return Results.Ok(perms);
+});
+
+app.MapPost("/api/roles", async (MainDbContext db, MainApi.Models.Role role, HttpContext http) =>
+{
+    db.Roles.Add(role);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(null, null, null, "role_create", $"name={role.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Created($"/api/roles/{role.Id}", role);
+});
+
+app.MapPut("/api/roles/{id}", async (MainDbContext db, int id, MainApi.Models.Role updated, HttpContext http) =>
+{
+    var role = await db.Roles.FindAsync(id);
+    if (role == null) return Results.NotFound();
+    role.Name = updated.Name;
+    role.Code = updated.Code;
+    role.Color = updated.Color;
+    role.LogoUrl = updated.LogoUrl;
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(null, null, null, "role_update", $"id={id},name={updated.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Ok(role);
+});
+
+app.MapDelete("/api/roles/{id}", async (MainDbContext db, int id, HttpContext http) =>
+{
+    var role = await db.Roles.FindAsync(id);
+    if (role == null) return Results.NotFound();
+    db.Roles.Remove(role);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(null, null, null, "role_delete", $"id={id},name={role.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.NoContent();
+});
+
+app.MapPost("/api/permissions", async (MainDbContext db, MainApi.Models.Permission perm, HttpContext http) =>
+{
+    db.Permissions.Add(perm);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(null, null, null, "permission_create", $"name={perm.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Created($"/api/permissions/{perm.Id}", perm);
+});
+
+app.MapPut("/api/permissions/{id}", async (MainDbContext db, int id, MainApi.Models.Permission updated, HttpContext http) =>
+{
+    var perm = await db.Permissions.FindAsync(id);
+    if (perm == null) return Results.NotFound();
+    perm.Name = updated.Name;
+    perm.Code = updated.Code;
+    perm.Description = updated.Description;
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(null, null, null, "permission_update", $"id={id},name={updated.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Ok(perm);
+});
+
+app.MapDelete("/api/permissions/{id}", async (MainDbContext db, int id, HttpContext http) =>
+{
+    var perm = await db.Permissions.FindAsync(id);
+    if (perm == null) return Results.NotFound();
+    db.Permissions.Remove(perm);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(null, null, null, "permission_delete", $"id={id},name={perm.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.NoContent();
+});
+
+// --- Ticket API ---
+app.MapGet("/api/tickets", async (MainDbContext db, int userId) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (perms.Contains("view_all_tickets"))
+        return Results.Ok(await db.Tickets.ToListAsync());
+    var own = await db.Tickets.Where(t => t.CreatedBy == userId).ToListAsync();
+    return Results.Ok(own);
+});
+
+app.MapPost("/api/tickets", async (MainDbContext db, int userId, MainApi.Models.Ticket ticket, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("create_ticket")) return Results.Forbid();
+    ticket.CreatedBy = userId;
+    ticket.Status = "open";
+    ticket.CreatedAt = DateTime.UtcNow;
+    db.Tickets.Add(ticket);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(userId, null, "ticket_create", $"title={ticket.Title}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Created($"/api/tickets/{ticket.Id}", ticket);
+});
+
+app.MapPut("/api/tickets/{id}/close", async (MainDbContext db, int userId, int id, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("close_ticket")) return Results.Forbid();
+    var ticket = await db.Tickets.FindAsync(id);
+    if (ticket == null) return Results.NotFound();
+    ticket.Status = "closed";
+    ticket.ClosedAt = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(userId, null, "ticket_close", $"id={id}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Ok(ticket);
+});
+
+app.MapDelete("/api/tickets/{id}", async (MainDbContext db, int userId, int id, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("delete_ticket")) return Results.Forbid();
+    var ticket = await db.Tickets.FindAsync(id);
+    if (ticket == null) return Results.NotFound();
+    db.Tickets.Remove(ticket);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(userId, null, "ticket_delete", $"id={id},title={ticket.Title}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.NoContent();
+});
+
+// --- Page Access API ---
+app.MapGet("/api/pages", async (MainDbContext db) =>
+{
+    var pages = await db.PageAccesses.Include(p => p.Permission).ToListAsync();
+    return Results.Ok(pages.Select(p => new { p.Id, p.Path, PermissionName = p.Permission.Name, PermissionCode = p.Permission.Code }));
+});
+
+app.MapPost("/api/pages", async (MainDbContext db, string path, string permissionCode) =>
+{
+    var perm = await db.Permissions.FirstOrDefaultAsync(p => p.Code == permissionCode);
+    if (perm == null) return Results.NotFound("Permission not found");
+    var page = new MainApi.Models.PageAccess { Path = path, PermissionId = perm.Id };
+    db.PageAccesses.Add(page);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/pages/{page.Id}", page);
+});
+
+app.MapPut("/api/pages/{id}", async (MainDbContext db, int id, string permissionCode) =>
+{
+    var page = await db.PageAccesses.FindAsync(id);
+    if (page == null) return Results.NotFound();
+    var perm = await db.Permissions.FirstOrDefaultAsync(p => p.Code == permissionCode);
+    if (perm == null) return Results.NotFound("Permission not found");
+    page.PermissionId = perm.Id;
+    await db.SaveChangesAsync();
+    return Results.Ok(page);
+});
+
+app.MapDelete("/api/pages/{id}", async (MainDbContext db, int id) =>
+{
+    var page = await db.PageAccesses.FindAsync(id);
+    if (page == null) return Results.NotFound();
+    db.PageAccesses.Remove(page);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+// --- API Token Management ---
+app.MapGet("/api/tokens", async (MainDbContext db, int userId, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("api_token")) return Results.Forbid();
+    var tokens = await db.ApiTokens.Include(t => t.Permissions).Where(t => t.UserId == userId).ToListAsync();
+    await AppHelpers.LogAuditAsync(db, userId, null, "token_view", $"count={tokens.Count}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Ok(tokens.Select(t => new {
+        t.Id,
+        t.Name,
+        t.CreatedAt,
+        t.ExpiresAt,
+        Permissions = t.Permissions.Select(tp => tp.PermissionId).ToList()
+    }));
+});
+
+app.MapPost("/api/tokens", async (MainDbContext db, int userId, string name, DateTime? expiresAt, List<int> permissionIds, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("api_token")) return Results.Forbid();
+    var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    var hash = PasswordHasher.HashPassword(rawToken, userId.ToString());
+    // Получаем разрешения пользователя по id
+    var allowedPermIds = await db.Permissions.Where(p => perms.Contains(p.Code)).Select(p => p.Id).ToListAsync();
+    var filteredPermIds = permissionIds.Where(id => allowedPermIds.Contains(id)).Distinct().ToList();
+    var token = new MainApi.Models.ApiToken
+    {
+        UserId = userId,
+        Token = hash,
+        Name = name,
+        CreatedAt = DateTime.UtcNow,
+        ExpiresAt = expiresAt,
+        Permissions = filteredPermIds.Select(pid => new MainApi.Models.TokenPermission { PermissionId = pid }).ToList()
+    };
+    db.ApiTokens.Add(token);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(db, userId, token.Id, "token_create", $"name={name};perms=[{string.Join(",", filteredPermIds)}]", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Ok(new { token.Id, token.Name, token.CreatedAt, token.ExpiresAt, Token = rawToken, Permissions = filteredPermIds });
+});
+
+app.MapDelete("/api/tokens/{id}", async (MainDbContext db, int userId, int id, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("api_token")) return Results.Forbid();
+    var token = await db.ApiTokens.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+    if (token == null) return Results.NotFound();
+    db.ApiTokens.Remove(token);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(db, userId, id, "token_delete", $"name={token.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.NoContent();
+});
+
+app.MapGet("/api/tokens/all", async (MainDbContext db, int userId, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("api_token_view_all")) return Results.Forbid();
+    var tokens = await db.ApiTokens.Include(t => t.UserId).ToListAsync();
+    var users = await db.Users.ToListAsync();
+    await AppHelpers.LogAuditAsync(db, userId, null, "token_view_all", $"count={tokens.Count}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.Ok(tokens.Select(t => new {
+        t.Id,
+        t.Name,
+        t.CreatedAt,
+        t.ExpiresAt,
+        t.UserId,
+        UserLogin = users.FirstOrDefault(u => u.Id == t.UserId)?.Login
+    }));
+});
+
+app.MapDelete("/api/tokens/all/{id}", async (MainDbContext db, int userId, int id, HttpContext http) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("api_token_delete_all")) return Results.Forbid();
+    var token = await db.ApiTokens.FirstOrDefaultAsync(t => t.Id == id);
+    if (token == null) return Results.NotFound();
+    db.ApiTokens.Remove(token);
+    await db.SaveChangesAsync();
+    await AppHelpers.LogAuditAsync(db, userId, id, "token_delete_any", $"name={token.Name}", http.Connection.RemoteIpAddress?.ToString());
+    return Results.NoContent();
+});
+
+// --- Audit Log API ---
+app.MapGet("/api/audit-logs", async (MainDbContext db, int userId, string? action, int? filterUserId, int? apiTokenId, string? ip, string? details, DateTime? from, DateTime? to) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("audit_log_view")) return Results.Forbid();
+    var query = db.AuditLogs.AsQueryable();
+    if (!string.IsNullOrWhiteSpace(action)) query = query.Where(l => l.Action == action);
+    if (filterUserId.HasValue) query = query.Where(l => l.UserId == filterUserId);
+    if (apiTokenId.HasValue) query = query.Where(l => l.ApiTokenId == apiTokenId);
+    if (!string.IsNullOrWhiteSpace(ip)) query = query.Where(l => l.Ip == ip);
+    if (!string.IsNullOrWhiteSpace(details)) query = query.Where(l => l.Details != null && l.Details.Contains(details));
+    if (from.HasValue) query = query.Where(l => l.CreatedAt >= from);
+    if (to.HasValue) query = query.Where(l => l.CreatedAt <= to);
+    var logs = await query.OrderByDescending(l => l.CreatedAt).Take(500).ToListAsync();
+    return Results.Ok(logs);
+});
+
+app.MapDelete("/api/audit-logs", async (MainDbContext db, int userId, string? action, int? filterUserId, int? apiTokenId, string? ip, string? details, DateTime? to) =>
+{
+    var perms = await GetUserPermissions(db, userId);
+    if (!perms.Contains("audit_log_manage")) return Results.Forbid();
+    var query = db.AuditLogs.AsQueryable();
+    if (!string.IsNullOrWhiteSpace(action)) query = query.Where(l => l.Action == action);
+    if (filterUserId.HasValue) query = query.Where(l => l.UserId == filterUserId);
+    if (apiTokenId.HasValue) query = query.Where(l => l.ApiTokenId == apiTokenId);
+    if (!string.IsNullOrWhiteSpace(ip)) query = query.Where(l => l.Ip == ip);
+    if (!string.IsNullOrWhiteSpace(details)) query = query.Where(l => l.Details != null && l.Details.Contains(details));
+    if (to.HasValue) query = query.Where(l => l.CreatedAt <= to);
+    db.AuditLogs.RemoveRange(query);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
 app.Run();
 
 // DTOs and domain below for single-file simplicity. In a real project, split by folders.
@@ -297,6 +579,7 @@ class User
     public string? TwoFactorSecret { get; set; }
     public bool TwoFactorEnabled { get; set; }
     public bool MustSetup2FA { get; set; }
+    public List<string> Permissions { get; set; } = new();
 }
 
 class NewsItem
@@ -448,6 +731,16 @@ class MainDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<NewsItem> News => Set<NewsItem>();
+    public DbSet<MainApi.Models.Role> Roles => Set<MainApi.Models.Role>();
+    public DbSet<MainApi.Models.Permission> Permissions => Set<MainApi.Models.Permission>();
+    public DbSet<MainApi.Models.RolePermission> RolePermissions => Set<MainApi.Models.RolePermission>();
+    public DbSet<MainApi.Models.UserRole> UserRoles => Set<MainApi.Models.UserRole>();
+    public DbSet<MainApi.Models.UserPermission> UserPermissions => Set<MainApi.Models.UserPermission>();
+    public DbSet<MainApi.Models.Ticket> Tickets => Set<MainApi.Models.Ticket>();
+    public DbSet<MainApi.Models.PageAccess> PageAccesses => Set<MainApi.Models.PageAccess>();
+    public DbSet<MainApi.Models.ApiToken> ApiTokens => Set<MainApi.Models.ApiToken>();
+    public DbSet<MainApi.Models.AuditLog> AuditLogs => Set<MainApi.Models.AuditLog>();
+    public DbSet<MainApi.Models.TokenPermission> TokenPermissions => Set<MainApi.Models.TokenPermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -474,6 +767,86 @@ class MainDbContext : DbContext
         news.Property(n => n.Title).HasMaxLength(200).IsRequired();
         news.Property(n => n.Description).HasMaxLength(4000).IsRequired();
         news.Property(n => n.CreatedAt).IsRequired();
+
+        // Role
+        var role = modelBuilder.Entity<MainApi.Models.Role>();
+        role.ToTable("roles");
+        role.HasKey(r => r.Id);
+        role.HasIndex(r => r.Code).IsUnique();
+        role.Property(r => r.Name).HasMaxLength(64).IsRequired();
+        role.Property(r => r.Code).HasMaxLength(64).IsRequired();
+        role.Property(r => r.Color).HasMaxLength(16);
+        role.Property(r => r.LogoUrl).HasMaxLength(256);
+        role.HasOne(r => r.ParentRole).WithMany().HasForeignKey(r => r.ParentRoleId).OnDelete(DeleteBehavior.Restrict);
+
+        // Permission
+        var perm = modelBuilder.Entity<MainApi.Models.Permission>();
+        perm.ToTable("permissions");
+        perm.HasKey(p => p.Id);
+        perm.HasIndex(p => p.Code).IsUnique();
+        perm.Property(p => p.Name).HasMaxLength(128).IsRequired();
+        perm.Property(p => p.Code).HasMaxLength(128).IsRequired();
+        perm.Property(p => p.Description).HasMaxLength(512);
+
+        // RolePermission
+        var rp = modelBuilder.Entity<MainApi.Models.RolePermission>();
+        rp.ToTable("role_permissions");
+        rp.HasKey(x => new { x.RoleId, x.PermissionId });
+        rp.HasOne(x => x.Role).WithMany(r => r.RolePermissions).HasForeignKey(x => x.RoleId);
+        rp.HasOne(x => x.Permission).WithMany(p => p.RolePermissions).HasForeignKey(x => x.PermissionId);
+
+        // UserRole
+        var ur = modelBuilder.Entity<MainApi.Models.UserRole>();
+        ur.ToTable("user_roles");
+        ur.HasKey(x => new { x.UserId, x.RoleId });
+        ur.HasOne(x => x.Role).WithMany(r => r.UserRoles).HasForeignKey(x => x.RoleId);
+
+        // UserPermission
+        var up = modelBuilder.Entity<MainApi.Models.UserPermission>();
+        up.ToTable("user_permissions");
+        up.HasKey(x => new { x.UserId, x.PermissionId });
+        up.HasOne(x => x.Permission).WithMany(p => p.UserPermissions).HasForeignKey(x => x.PermissionId);
+
+        // Ticket
+        var ticket = modelBuilder.Entity<MainApi.Models.Ticket>();
+        ticket.ToTable("tickets");
+        ticket.HasKey(t => t.Id);
+        ticket.Property(t => t.Title).HasMaxLength(200).IsRequired();
+        ticket.Property(t => t.Description).HasMaxLength(4000);
+        ticket.Property(t => t.Status).HasMaxLength(32).IsRequired();
+        ticket.Property(t => t.CreatedAt).IsRequired();
+
+        // PageAccess
+        var page = modelBuilder.Entity<MainApi.Models.PageAccess>();
+        page.ToTable("page_access");
+        page.HasKey(p => p.Id);
+        page.Property(p => p.Path).HasMaxLength(128).IsRequired();
+        page.HasOne(p => p.Permission).WithMany().HasForeignKey(p => p.PermissionId).OnDelete(DeleteBehavior.Cascade);
+
+        // ApiToken
+        var token = modelBuilder.Entity<MainApi.Models.ApiToken>();
+        token.ToTable("api_tokens");
+        token.HasKey(t => t.Id);
+        token.Property(t => t.Token).HasMaxLength(128).IsRequired();
+        token.Property(t => t.Name).HasMaxLength(64);
+        token.Property(t => t.CreatedAt).IsRequired();
+
+        // AuditLog
+        var log = modelBuilder.Entity<MainApi.Models.AuditLog>();
+        log.ToTable("audit_logs");
+        log.HasKey(l => l.Id);
+        log.Property(l => l.Action).HasMaxLength(128).IsRequired();
+        log.Property(l => l.Details).HasMaxLength(2048);
+        log.Property(l => l.TokenName).HasMaxLength(64);
+        log.Property(l => l.IpAddress).HasMaxLength(64);
+        log.Property(l => l.Timestamp).IsRequired();
+
+        // TokenPermission
+        var tp = modelBuilder.Entity<MainApi.Models.TokenPermission>();
+        tp.ToTable("token_permissions");
+        tp.HasKey(x => new { x.TokenId, x.PermissionId });
+        tp.HasOne(x => x.Token).WithMany(t => t.Permissions).HasForeignKey(x => x.TokenId);
+        tp.HasOne(x => x.Permission).WithMany().HasForeignKey(x => x.PermissionId);
     }
 }
 
@@ -512,4 +885,29 @@ class EfNewsRepository : INewsRepository
             .ToListAsync();
         return slice;
     }
+}
+
+static async Task<HashSet<string>> GetUserPermissions(MainDbContext db, int userId)
+{
+    var userPerms = await db.UserPermissions.Where(up => up.UserId == userId).Select(up => up.Permission.Code).ToListAsync();
+    var roleIds = await db.UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToListAsync();
+    var allPerms = new HashSet<string>(userPerms);
+    var visitedRoles = new HashSet<int>();
+    foreach (var roleId in roleIds)
+        AddRolePermissionsRecursive(db, roleId, allPerms, visitedRoles);
+    // Если есть '*' — все разрешения
+    if (allPerms.Contains("*"))
+        allPerms = db.Permissions.Select(p => p.Code).ToHashSet();
+    return allPerms;
+}
+static void AddRolePermissionsRecursive(MainDbContext db, int roleId, HashSet<string> perms, HashSet<int> visited)
+{
+    if (visited.Contains(roleId)) return;
+    visited.Add(roleId);
+    var role = db.Roles.Include(r => r.RolePermissions).FirstOrDefault(r => r.Id == roleId);
+    if (role == null) return;
+    var codes = role.RolePermissions.Select(rp => rp.Permission.Code);
+    foreach (var c in codes) perms.Add(c);
+    if (role.ParentRoleId.HasValue)
+        AddRolePermissionsRecursive(db, role.ParentRoleId.Value, perms, visited);
 }

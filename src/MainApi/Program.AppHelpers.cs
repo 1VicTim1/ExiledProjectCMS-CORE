@@ -110,6 +110,84 @@ internal static class AppHelpers
             });
         }
 
+        // --- Seed roles and permissions ---
+        var adminLogin = Environment.GetEnvironmentVariable("ADMIN_LOGIN") ?? "admin";
+        var adminRole = ctx.Roles.FirstOrDefault(r => r.Code == "admin");
+        if (adminRole == null)
+        {
+            adminRole = new MainApi.Models.Role { Name = "Администратор", Code = "admin", Color = "#800080", LogoUrl = "", ParentRoleId = null };
+            ctx.Roles.Add(adminRole);
+            ctx.SaveChanges();
+        }
+        var userRole = ctx.Roles.FirstOrDefault(r => r.Code == "user");
+        if (userRole == null)
+        {
+            userRole = new MainApi.Models.Role { Name = "Пользователь", Code = "user", Color = "#6f42c1", LogoUrl = "", ParentRoleId = null };
+            ctx.Roles.Add(userRole);
+            ctx.SaveChanges();
+        }
+        // --- Permissions ---
+        var permissions = new[]
+        {
+            new MainApi.Models.Permission { Name = "Доступ к главной странице", Code = "access_home", Description = "Доступ к главной странице" },
+            new MainApi.Models.Permission { Name = "Доступ к странице входа", Code = "access_login", Description = "Доступ к странице входа" },
+            new MainApi.Models.Permission { Name = "Управление ролями", Code = "manage_roles", Description = "Доступ к матрице ролей и разрешений" },
+            new MainApi.Models.Permission { Name = "Управление новостями", Code = "manage_news", Description = "Добавление и изменение новостей" },
+            new MainApi.Models.Permission { Name = "Доступ к конструктору страниц", Code = "page_builder", Description = "Доступ к визуальному редактору страниц" },
+            // Ticket permissions
+            new MainApi.Models.Permission { Name = "Создание тикетов", Code = "create_ticket", Description = "Создание тикетов" },
+            new MainApi.Models.Permission { Name = "Закрытие тикетов", Code = "close_ticket", Description = "Закрытие тикетов" },
+            new MainApi.Models.Permission { Name = "Удаление тикетов", Code = "delete_ticket", Description = "Удаление тикетов" },
+            new MainApi.Models.Permission { Name = "Просмотр всех тикетов", Code = "view_all_tickets", Description = "Просмотр тикетов других пользователей" },
+            new MainApi.Models.Permission { Name = "Управление API токенами", Code = "api_token", Description = "Получение и управление API токенами для интеграций" },
+            new MainApi.Models.Permission { Name = "Просмотр логов действий", Code = "audit_log_view", Description = "Просмотр логов действий пользователей и токенов" },
+            new MainApi.Models.Permission { Name = "Управление логами действий", Code = "audit_log_manage", Description = "Удаление и очистка логов действий" },
+            new MainApi.Models.Permission { Name = "Просмотр всех API токенов", Code = "api_token_view_all", Description = "Просмотр всех токенов и их владельцев" },
+            new MainApi.Models.Permission { Name = "Удаление любых API токенов", Code = "api_token_delete_all", Description = "Удаление любых токенов, а не только своих" },
+        };
+        foreach (var perm in permissions)
+        {
+            if (!ctx.Permissions.Any(p => p.Code == perm.Code))
+                ctx.Permissions.Add(perm);
+        }
         ctx.SaveChanges();
+        // --- Назначение всех разрешений админу ---
+        var allPerms = ctx.Permissions.ToList();
+        foreach (var perm in allPerms)
+        {
+            if (!ctx.RolePermissions.Any(rp => rp.RoleId == adminRole.Id && rp.PermissionId == perm.Id))
+                ctx.RolePermissions.Add(new MainApi.Models.RolePermission { RoleId = adminRole.Id, PermissionId = perm.Id });
+        }
+        ctx.SaveChanges();
+        // --- Назначение базовых разрешений обычному пользователю ---
+        var userPerms = ctx.Permissions.Where(p => p.Code == "access_home" || p.Code == "access_login").ToList();
+        foreach (var perm in userPerms)
+        {
+            if (!ctx.RolePermissions.Any(rp => rp.RoleId == userRole.Id && rp.PermissionId == perm.Id))
+                ctx.RolePermissions.Add(new MainApi.Models.RolePermission { RoleId = userRole.Id, PermissionId = perm.Id });
+        }
+        ctx.SaveChanges();
+        // --- Назначение роли админу из .env ---
+        var adminUser = ctx.Users.FirstOrDefault(u => u.Login == adminLogin);
+        if (adminUser != null && !ctx.UserRoles.Any(ur => ur.UserId == adminUser.Id && ur.RoleId == adminRole.Id))
+        {
+            ctx.UserRoles.Add(new MainApi.Models.UserRole { UserId = adminUser.Id, RoleId = adminRole.Id });
+            ctx.SaveChanges();
+        }
+    }
+
+    // --- Универсальная функция логирования действий ---
+    public static async Task LogAuditAsync(MainDbContext db, int? userId, int? apiTokenId, string action, string? details, string? ip)
+    {
+        db.AuditLogs.Add(new MainApi.Models.AuditLog
+        {
+            UserId = userId,
+            ApiTokenId = apiTokenId,
+            Action = action,
+            Details = details,
+            Ip = ip,
+            CreatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
     }
 }

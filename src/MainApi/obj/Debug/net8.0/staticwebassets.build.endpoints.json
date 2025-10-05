@@ -1,5 +1,88 @@
 {
   "Version": 1,
   "ManifestType": "Build",
-  "Endpoints": []
+  "Endpoints": [
+    {
+      "Route": "login/index.goxh818gb6.html",
+      "AssetFile": "login/index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "7308"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Sun, 05 Oct 2025 07:00:27 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "goxh818gb6"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk="
+        },
+        {
+          "Name": "label",
+          "Value": "login/index.html"
+        }
+      ]
+    },
+    {
+      "Route": "login/index.html",
+      "AssetFile": "login/index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "7308"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Sun, 05 Oct 2025 07:00:27 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk="
+        }
+      ]
+    }
+  ]
 }

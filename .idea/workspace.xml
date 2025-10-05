@@ -5,10 +5,41 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="29f2252b-175b-4d29-afbf-2e8e33ce87e2" name="Changes" comment="asd">
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/main.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/router.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/AuditLogs.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Dashboard.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Login.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Messenger.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Notifications.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/PageEditor.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Profile.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/RoleManager.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Tokens.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Users.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/MainApi/Models/AuditLog.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/MainApi/Models/RolePermissionModels.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/MainApi/Models/TokenPermission.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/login-frontend/src/App.vue" beforeDir="false" afterPath="$PROJECT_DIR$/login-frontend/src/App.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.deps.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.deps.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.staticwebassets.endpoints.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.staticwebassets.endpoints.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.CoreCompileInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.CoreCompileInputs.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.FileListAbsolute.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.FileListAbsolute.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.endpoints.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.endpoints.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json.cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.dgspec.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.dgspec.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.props" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.targets" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.targets" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/project.assets.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/project.assets.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/project.nuget.cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/project.nuget.cache" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +86,7 @@
     <option name="packageCheck" value="true" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
@@ -65,40 +96,41 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Go Build.go build email-service.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.GoLinterPluginOnboarding": "true",
-    "RunOnceActivity.GoLinterPluginStorageMigration": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "SHELLCHECK.PATH": "C:\\Users\\122aa\\AppData\\Roaming\\JetBrains\\GoLand2025.2\\plugins\\Shell Script\\shellcheck.exe",
-    "git-widget-placeholder": "master",
-    "go.import.settings.migrated": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "C:/Users/122aa/RiderProjects/ExiledProjectCMS",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "configurable.tailwindcss",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Go Build.go build email-service.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.GoLinterPluginOnboarding&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.GoLinterPluginStorageMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;SHELLCHECK.PATH&quot;: &quot;C:\\Users\\122aa\\AppData\\Roaming\\JetBrains\\GoLand2025.2\\plugins\\Shell Script\\shellcheck.exe&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/122aa/RiderProjects/ExiledProjectCMS&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.tailwindcss&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\GoLand 2025.2.2\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "ChangesTree.GroupingKeys": [
-      "directory",
-      "repository"
+  &quot;keyToStringList&quot;: {
+    &quot;ChangesTree.GroupingKeys&quot;: [
+      &quot;directory&quot;,
+      &quot;repository&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="go build email-service" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="ExiledProjectCMS" />
@@ -135,6 +167,11 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+    <option name="exactExcludedFiles">
+      <list>
+        <option value="$PROJECT_DIR$/login-frontend/src/main.js" />
+      </list>
+    </option>
   </component>
   <component name="UpdateCopyrightCheckinHandler">
     <option name="UPDATE_COPYRIGHT" value="true" />

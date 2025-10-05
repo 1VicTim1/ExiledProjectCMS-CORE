@@ -1,12 +1,127 @@
 {
   "Version": 1,
-  "Hash": "rHQfoRMAiONDXtoWobUPbXkwiujGMzAO74KEtkaWK4w=",
+  "Hash": "Pr1zrPZoHH45ghhHWRTxC0YqGyUJZbqtRNY/7Gkvso0=",
   "Source": "MainApi",
   "BasePath": "_content/MainApi",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": [],
-  "Endpoints": []
+  "DiscoveryPatterns": [
+    {
+      "Name": "MainApi\\wwwroot",
+      "Source": "MainApi",
+      "ContentRoot": "C:\\Users\\122aa\\RiderProjects\\ExiledProjectCMS\\src\\MainApi\\wwwroot\\",
+      "BasePath": "_content/MainApi",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "C:\\Users\\122aa\\RiderProjects\\ExiledProjectCMS\\src\\MainApi\\wwwroot\\login\\index.html",
+      "SourceId": "MainApi",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\122aa\\RiderProjects\\ExiledProjectCMS\\src\\MainApi\\wwwroot\\",
+      "BasePath": "_content/MainApi",
+      "RelativePath": "login/index#[.{fingerprint}]?.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "goxh818gb6",
+      "Integrity": "QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\login\\index.html",
+      "FileLength": 7308,
+      "LastWriteTime": "2025-10-05T07:00:27+00:00"
+    }
+  ],
+  "Endpoints": [
+    {
+      "Route": "login/index.goxh818gb6.html",
+      "AssetFile": "C:\\Users\\122aa\\RiderProjects\\ExiledProjectCMS\\src\\MainApi\\wwwroot\\login\\index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "7308"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Sun, 05 Oct 2025 07:00:27 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "goxh818gb6"
+        },
+        {
+          "Name": "label",
+          "Value": "login/index.html"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk="
+        }
+      ]
+    },
+    {
+      "Route": "login/index.html",
+      "AssetFile": "C:\\Users\\122aa\\RiderProjects\\ExiledProjectCMS\\src\\MainApi\\wwwroot\\login\\index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "7308"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Sun, 05 Oct 2025 07:00:27 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-QA+M4HRjVpnwseFOh2z//xGmix9pzT/hzwQOg+CkRDk="
+        }
+      ]
+    }
+  ]
 }
