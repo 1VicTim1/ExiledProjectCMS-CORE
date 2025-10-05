@@ -190,14 +190,15 @@
                 data = await resp.json();
             } catch {
             }
-            if (resp.ok) {
+            // --- Исправлено: переход к setup-2fa при наличии поля next вне зависимости от кода ---
+            if (data.Next === 'setup-2fa') {
+                await start2faSetup(login);
+            } else if (data.Next === 'enter-2fa') {
+                showStep('2fa');
+            } else if (resp.ok) {
                 $('msg').className = 'msg success';
                 $('msg').textContent = data.message || 'Вход выполнен';
                 setTimeout(() => location.reload(), 1000);
-            } else if (data.Next === 'enter-2fa') {
-                showStep('2fa');
-            } else if (data.Next === 'setup-2fa') {
-                await start2faSetup(login);
             } else {
                 $('msg').className = 'msg error';
                 $('msg').textContent = data.message || `Ошибка: ${resp.status}`;
