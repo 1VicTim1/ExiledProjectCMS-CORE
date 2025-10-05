@@ -62,12 +62,12 @@ async function login() {
     if (r.status === 200) {
       success.value = 'Успешная авторизация'
       setTimeout(() => window.location.reload(), 1000)
-    } else if (t.Next === 'setup-2fa') {
+    } else if (t.next === 'setup-2fa') {
       await start2fa()
-    } else if (t.Next === 'enter-2fa') {
+    } else if (t.next === 'enter-2fa') {
       step.value = 'enter-2fa'
     } else {
-      error.value = t.Message || `Ошибка: ${r.status}`
+      error.value = t.message || `Ошибка: ${r.status}`
     }
   } catch (e) {
     error.value = 'Ошибка сети'
@@ -194,4 +194,3 @@ img {
   margin-top: 20px;
 }
 </style>
-
