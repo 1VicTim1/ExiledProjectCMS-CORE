@@ -85,8 +85,8 @@ async function start2fa() {
       body: JSON.stringify({login: loginForm.value.login, issuer: 'ExiledCMS'})
     })
     const t = await r.json()
-    qrCode.value = t.QrCodeDataUrl
-    secret.value = t.Secret
+    qrCode.value = t.qrCodeDataUrl
+    secret.value = t.secret
     step.value = 'setup-2fa'
   } catch {
     error.value = 'Ошибка генерации QR-кода'
