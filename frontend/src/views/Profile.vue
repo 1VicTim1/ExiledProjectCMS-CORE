@@ -133,10 +133,10 @@ const notifications = ref([
   {id: 1, title: 'Важное обновление', time: Date.now() - 3600000},
   {id: 2, title: 'Добро пожаловать!', time: Date.now() - 7200000}
 ])
-const userPermissions = inject('userPermissions', ref<string[]>(['admin_panel', 'edit_pages']))
+const userPermissions = inject<string[]>('userPermissions', [])
 
 function hasPermission(perm: string) {
-  return userPermissions.value.includes(perm)
+  return Array.isArray(userPermissions) && userPermissions.includes(perm)
 }
 
 function formatDate(d: string) {
@@ -145,7 +145,7 @@ function formatDate(d: string) {
 }
 
 async function fetchProfile() {
-  const r = await fetch(`${API}/api/profile?userId=1`)
+  const r = await fetch(`${API}/api/profile`)
   user.value = await r.json()
 }
 
@@ -168,7 +168,7 @@ function onAvatarChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (file) {
     const reader = new FileReader()
-    reader.onload = ev => avatarPreview.value = ev.target?.result as string
+    reader.onload = ev => avatarPreview.value = (ev.target as FileReader)?.result as string
     reader.readAsDataURL(file)
   }
 }
@@ -189,7 +189,7 @@ async function submitPassword() {
     const r = await fetch(`${API}/api/profile/change-password`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({old: passwordForm.value.old, password: passwordForm.value.new1, userId: 1})
+      body: JSON.stringify({old: passwordForm.value.old, password: passwordForm.value.new1})
     })
     if (!r.ok) throw new Error('Ошибка смены пароля')
     passwordSuccess.value = 'Пароль успешно изменён'
@@ -199,10 +199,3 @@ async function submitPassword() {
   }
 }
 </script>
-
-<style scoped>
-.dark-theme {
-  background: #181a1b !important;
-  color: #f8f9fa !important;
-}
-</style>

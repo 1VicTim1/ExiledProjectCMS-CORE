@@ -46,8 +46,8 @@
 import {computed, inject, ref} from 'vue'
 
 const API = import.meta.env.VITE_API_BASE_URL || ''
-const userPermissions = inject('userPermissions', ref<string[]>([]))
-const isAdmin = computed(() => userPermissions.value.includes('admin_panel') || userPermissions.value.includes('send_notifications'))
+const userPermissions = inject<string[]>('userPermissions', [])
+const isAdmin = computed(() => Array.isArray(userPermissions) && (userPermissions.includes('admin_panel') || userPermissions.includes('send_notifications')))
 
 const notifications = ref([
   {id: 1, title: 'Важное обновление', text: 'Система будет недоступна ночью.', time: Date.now() - 3600000},

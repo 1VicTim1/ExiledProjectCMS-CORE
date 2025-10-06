@@ -78,11 +78,10 @@ import {inject, onMounted, ref} from 'vue'
 
 const API = import.meta.env.VITE_API_BASE_URL || ''
 const users = ref<any[]>([])
-// Глобальные разрешения пользователя (можно заменить на Pinia/store)
-const userPermissions = inject('userPermissions', ref<string[]>(['force_password_change', 'force_2fa_bind']))
+const userPermissions = inject<string[]>('userPermissions', [])
 
 function hasPermission(perm: string) {
-  return userPermissions.value.includes(perm)
+  return Array.isArray(userPermissions) && userPermissions.includes(perm)
 }
 
 function formatDate(d: string) {
@@ -91,8 +90,13 @@ function formatDate(d: string) {
 }
 
 async function fetchUsers() {
-  const r = await fetch(`${API}/api/users?userId=1`)
-  users.value = await r.json()
+  try {
+    const r = await fetch(`${API}/api/users`)
+    users.value = await r.json()
+  } catch (e) {
+    console.warn('Не удалось загрузить пользователей:', e)
+    users.value = []
+  }
 }
 
 onMounted(fetchUsers)

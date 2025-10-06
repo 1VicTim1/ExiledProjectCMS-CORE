@@ -1,3 +1,4 @@
+import type {RouteRecordRaw} from 'vue-router';
 import {createRouter, createWebHistory} from 'vue-router';
 import Login from './views/Login.vue';
 import Dashboard from './views/Dashboard.vue';
@@ -7,8 +8,10 @@ import Users from './views/Users.vue';
 import Profile from './views/Profile.vue';
 import PageEditor from './views/PageEditor.vue';
 import RoleManager from './views/RoleManager.vue';
+import Messenger from './views/Messenger.vue';
+import Notifications from './views/Notifications.vue';
 
-const routes = [
+const routes: RouteRecordRaw[] = [
     {path: '/', name: 'Login', component: Login},
     {path: '/login', redirect: {name: 'Login'}},
     {path: '/dashboard', name: 'Dashboard', component: Dashboard},
@@ -18,10 +21,12 @@ const routes = [
     {path: '/profile', name: 'Profile', component: Profile},
     {path: '/page-editor', name: 'PageEditor', component: PageEditor},
     {path: '/roles', name: 'RoleManager', component: RoleManager},
+    {path: '/messenger', name: 'Messenger', component: Messenger},
+    {path: '/notifications', name: 'Notifications', component: Notifications},
     {path: '/:pathMatch(.*)*', redirect: '/'},
 ];
 
 export default createRouter({
-    history: createWebHistory(),
+    history: createWebHistory(import.meta.env.BASE_URL),
     routes,
 });
