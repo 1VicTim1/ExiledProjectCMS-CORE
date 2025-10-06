@@ -177,8 +177,9 @@ internal static class AppHelpers
     }
 
     // --- Универсальная функция логирования действий ---
-    public static async Task LogAuditAsync(MainDbContext db, int? userId, int? apiTokenId, string action, string? details, string? ip)
+    public static async Task LogAuditAsync(MainDbContext? db, int? userId, int? apiTokenId, string action, string? details, string? ip)
     {
+        if (db == null) return;
         db.AuditLogs.Add(new MainApi.Models.AuditLog
         {
             UserId = userId,

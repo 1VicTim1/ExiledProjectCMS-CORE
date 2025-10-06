@@ -202,10 +202,10 @@ app.MapPost("/api/web/login", async (AuthRequest request, IUserRepository users,
     }
     if (!PasswordHasher.VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
     {
-        await AppHelpers.LogAuditAsync(user.Id, null, null, "web_login_fail", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
+        await AppHelpers.LogAuditAsync(null, user.Id, null, "web_login_fail", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
         return Results.Json(new { Message = "Неверный логин или пароль" }, statusCode: StatusCodes.Status401Unauthorized);
     }
-    await AppHelpers.LogAuditAsync(user.Id, null, null, "web_login_success", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(null, user.Id, null, "web_login_success", $"login={request.Login}", http.Connection.RemoteIpAddress?.ToString());
 
     if (user.IsBanned)
     {
@@ -287,7 +287,7 @@ app.MapPost("/api/roles", async (MainDbContext db, MainApi.Models.Role role, Htt
 {
     db.Roles.Add(role);
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(null, null, null, "role_create", $"name={role.Name}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, null, null, "role_create", $"name={role.Name}", http.Connection.RemoteIpAddress?.ToString());
     return Results.Created($"/api/roles/{role.Id}", role);
 });
 
@@ -300,7 +300,7 @@ app.MapPut("/api/roles/{id}", async (MainDbContext db, int id, MainApi.Models.Ro
     role.Color = updated.Color;
     role.LogoUrl = updated.LogoUrl;
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(null, null, null, "role_update", $"id={id},name={updated.Name}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, null, null, "role_update", $"id={id},name={updated.Name}", http.Connection.RemoteIpAddress?.ToString());
     return Results.Ok(role);
 });
 
@@ -310,7 +310,7 @@ app.MapDelete("/api/roles/{id}", async (MainDbContext db, int id, HttpContext ht
     if (role == null) return Results.NotFound();
     db.Roles.Remove(role);
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(null, null, null, "role_delete", $"id={id},name={role.Name}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, null, null, "role_delete", $"id={id},name={role.Name}", http.Connection.RemoteIpAddress?.ToString());
     return Results.NoContent();
 });
 
@@ -318,7 +318,7 @@ app.MapPost("/api/permissions", async (MainDbContext db, MainApi.Models.Permissi
 {
     db.Permissions.Add(perm);
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(null, null, null, "permission_create", $"name={perm.Name}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, null, null, "permission_create", $"name={perm.Name}", http.Connection.RemoteIpAddress?.ToString());
     return Results.Created($"/api/permissions/{perm.Id}", perm);
 });
 
@@ -330,7 +330,7 @@ app.MapPut("/api/permissions/{id}", async (MainDbContext db, int id, MainApi.Mod
     perm.Code = updated.Code;
     perm.Description = updated.Description;
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(null, null, null, "permission_update", $"id={id},name={updated.Name}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, null, null, "permission_update", $"id={id},name={updated.Name}", http.Connection.RemoteIpAddress?.ToString());
     return Results.Ok(perm);
 });
 
@@ -340,14 +340,14 @@ app.MapDelete("/api/permissions/{id}", async (MainDbContext db, int id, HttpCont
     if (perm == null) return Results.NotFound();
     db.Permissions.Remove(perm);
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(null, null, null, "permission_delete", $"id={id},name={perm.Name}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, null, null, "permission_delete", $"id={id},name={perm.Name}", http.Connection.RemoteIpAddress?.ToString());
     return Results.NoContent();
 });
 
 // --- Ticket API ---
 app.MapGet("/api/tickets", async (MainDbContext db, int userId) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (perms.Contains("view_all_tickets"))
         return Results.Ok(await db.Tickets.ToListAsync());
     var own = await db.Tickets.Where(t => t.CreatedBy == userId).ToListAsync();
@@ -356,39 +356,39 @@ app.MapGet("/api/tickets", async (MainDbContext db, int userId) =>
 
 app.MapPost("/api/tickets", async (MainDbContext db, int userId, MainApi.Models.Ticket ticket, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("create_ticket")) return Results.Forbid();
     ticket.CreatedBy = userId;
     ticket.Status = "open";
     ticket.CreatedAt = DateTime.UtcNow;
     db.Tickets.Add(ticket);
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(userId, null, "ticket_create", $"title={ticket.Title}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, userId, null, "ticket_create", $"title={ticket.Title}", http.Connection.RemoteIpAddress?.ToString());
     return Results.Created($"/api/tickets/{ticket.Id}", ticket);
 });
 
 app.MapPut("/api/tickets/{id}/close", async (MainDbContext db, int userId, int id, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("close_ticket")) return Results.Forbid();
     var ticket = await db.Tickets.FindAsync(id);
     if (ticket == null) return Results.NotFound();
     ticket.Status = "closed";
     ticket.ClosedAt = DateTime.UtcNow;
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(userId, null, "ticket_close", $"id={id}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, userId, null, "ticket_close", $"id={id}", http.Connection.RemoteIpAddress?.ToString());
     return Results.Ok(ticket);
 });
 
 app.MapDelete("/api/tickets/{id}", async (MainDbContext db, int userId, int id, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("delete_ticket")) return Results.Forbid();
     var ticket = await db.Tickets.FindAsync(id);
     if (ticket == null) return Results.NotFound();
     db.Tickets.Remove(ticket);
     await db.SaveChangesAsync();
-    await AppHelpers.LogAuditAsync(userId, null, "ticket_delete", $"id={id},title={ticket.Title}", http.Connection.RemoteIpAddress?.ToString());
+    await AppHelpers.LogAuditAsync(db, userId, null, "ticket_delete", $"id={id},title={ticket.Title}", http.Connection.RemoteIpAddress?.ToString());
     return Results.NoContent();
 });
 
@@ -432,7 +432,7 @@ app.MapDelete("/api/pages/{id}", async (MainDbContext db, int id) =>
 // --- API Token Management ---
 app.MapGet("/api/tokens", async (MainDbContext db, int userId, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("api_token")) return Results.Forbid();
     var tokens = await db.ApiTokens.Include(t => t.Permissions).Where(t => t.UserId == userId).ToListAsync();
     await AppHelpers.LogAuditAsync(db, userId, null, "token_view", $"count={tokens.Count}", http.Connection.RemoteIpAddress?.ToString());
@@ -447,7 +447,7 @@ app.MapGet("/api/tokens", async (MainDbContext db, int userId, HttpContext http)
 
 app.MapPost("/api/tokens", async (MainDbContext db, int userId, string name, DateTime? expiresAt, List<int> permissionIds, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("api_token")) return Results.Forbid();
     var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
     var hash = PasswordHasher.HashPassword(rawToken, userId.ToString());
@@ -471,7 +471,7 @@ app.MapPost("/api/tokens", async (MainDbContext db, int userId, string name, Dat
 
 app.MapDelete("/api/tokens/{id}", async (MainDbContext db, int userId, int id, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("api_token")) return Results.Forbid();
     var token = await db.ApiTokens.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
     if (token == null) return Results.NotFound();
@@ -483,7 +483,7 @@ app.MapDelete("/api/tokens/{id}", async (MainDbContext db, int userId, int id, H
 
 app.MapGet("/api/tokens/all", async (MainDbContext db, int userId, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("api_token_view_all")) return Results.Forbid();
     var tokens = await db.ApiTokens.Include(t => t.UserId).ToListAsync();
     var users = await db.Users.ToListAsync();
@@ -500,7 +500,7 @@ app.MapGet("/api/tokens/all", async (MainDbContext db, int userId, HttpContext h
 
 app.MapDelete("/api/tokens/all/{id}", async (MainDbContext db, int userId, int id, HttpContext http) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("api_token_delete_all")) return Results.Forbid();
     var token = await db.ApiTokens.FirstOrDefaultAsync(t => t.Id == id);
     if (token == null) return Results.NotFound();
@@ -513,7 +513,7 @@ app.MapDelete("/api/tokens/all/{id}", async (MainDbContext db, int userId, int i
 // --- Audit Log API ---
 app.MapGet("/api/audit-logs", async (MainDbContext db, int userId, string? action, int? filterUserId, int? apiTokenId, string? ip, string? details, DateTime? from, DateTime? to) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("audit_log_view")) return Results.Forbid();
     var query = db.AuditLogs.AsQueryable();
     if (!string.IsNullOrWhiteSpace(action)) query = query.Where(l => l.Action == action);
@@ -529,7 +529,7 @@ app.MapGet("/api/audit-logs", async (MainDbContext db, int userId, string? actio
 
 app.MapDelete("/api/audit-logs", async (MainDbContext db, int userId, string? action, int? filterUserId, int? apiTokenId, string? ip, string? details, DateTime? to) =>
 {
-    var perms = await GetUserPermissions(db, userId);
+    var perms = await PermissionHelper.GetUserPermissions(db, userId);
     if (!perms.Contains("audit_log_manage")) return Results.Forbid();
     var query = db.AuditLogs.AsQueryable();
     if (!string.IsNullOrWhiteSpace(action)) query = query.Where(l => l.Action == action);
@@ -567,7 +567,7 @@ record TwoFaVerifyRequest
 
 class User
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
     public string Login { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string PasswordSalt { get; set; } = string.Empty;
@@ -887,27 +887,31 @@ class EfNewsRepository : INewsRepository
     }
 }
 
-static async Task<HashSet<string>> GetUserPermissions(MainDbContext db, int userId)
+static class PermissionHelper
 {
-    var userPerms = await db.UserPermissions.Where(up => up.UserId == userId).Select(up => up.Permission.Code).ToListAsync();
-    var roleIds = await db.UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToListAsync();
-    var allPerms = new HashSet<string>(userPerms);
-    var visitedRoles = new HashSet<int>();
-    foreach (var roleId in roleIds)
-        AddRolePermissionsRecursive(db, roleId, allPerms, visitedRoles);
-    // Если есть '*' — все разрешения
-    if (allPerms.Contains("*"))
-        allPerms = db.Permissions.Select(p => p.Code).ToHashSet();
-    return allPerms;
-}
-static void AddRolePermissionsRecursive(MainDbContext db, int roleId, HashSet<string> perms, HashSet<int> visited)
-{
-    if (visited.Contains(roleId)) return;
-    visited.Add(roleId);
-    var role = db.Roles.Include(r => r.RolePermissions).FirstOrDefault(r => r.Id == roleId);
-    if (role == null) return;
-    var codes = role.RolePermissions.Select(rp => rp.Permission.Code);
-    foreach (var c in codes) perms.Add(c);
-    if (role.ParentRoleId.HasValue)
-        AddRolePermissionsRecursive(db, role.ParentRoleId.Value, perms, visited);
+    public static async Task<HashSet<string>> GetUserPermissions(MainDbContext db, int userId)
+    {
+        var userPerms = await db.UserPermissions.Where(up => up.UserId == userId).Select(up => up.Permission.Code).ToListAsync();
+        var roleIds = await db.UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToListAsync();
+        var allPerms = new HashSet<string>(userPerms);
+        var visitedRoles = new HashSet<int>();
+        foreach (var roleId in roleIds)
+            AddRolePermissionsRecursive(db, roleId, allPerms, visitedRoles);
+        // Если есть '*' — все разрешения
+        if (allPerms.Contains("*"))
+            allPerms = db.Permissions.Select(p => p.Code).ToHashSet();
+        return allPerms;
+    }
+
+    public static void AddRolePermissionsRecursive(MainDbContext db, int roleId, HashSet<string> perms, HashSet<int> visited)
+    {
+        if (visited.Contains(roleId)) return;
+        visited.Add(roleId);
+        var role = db.Roles.Include(r => r.RolePermissions).FirstOrDefault(r => r.Id == roleId);
+        if (role == null) return;
+        var codes = role.RolePermissions.Select(rp => rp.Permission.Code);
+        foreach (var c in codes) perms.Add(c);
+        if (role.ParentRoleId.HasValue)
+            AddRolePermissionsRecursive(db, role.ParentRoleId.Value, perms, visited);
+    }
 }

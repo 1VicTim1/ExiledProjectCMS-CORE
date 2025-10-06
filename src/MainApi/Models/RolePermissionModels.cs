@@ -78,15 +78,4 @@ namespace MainApi.Models
         public List<TokenPermission> Permissions { get; set; } = new();
     }
 
-    public class AuditLog
-    {
-        public int Id { get; set; }
-        public int? UserId { get; set; }
-        public int? ApiTokenId { get; set; }
-        public string TokenName { get; set; } // Копия имени токена на момент действия
-        public string Action { get; set; } // Описание действия (например, "create_ticket", "delete_role", "api_call:/api/news")
-        public string Details { get; set; } // Доп. информация (например, параметры запроса)
-        public DateTime Timestamp { get; set; }
-        public string IpAddress { get; set; }
-    }
 }

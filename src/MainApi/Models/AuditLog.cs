@@ -9,8 +9,13 @@ namespace MainApi.Models
         public int? ApiTokenId { get; set; }
         public string Action { get; set; } = null!;
         public string? Details { get; set; }
-        public string? Ip { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? TokenName { get; set; }
+        public string? IpAddress { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        // Backwards-compat aliases for existing code
+        public string? Ip { get => IpAddress; set => IpAddress = value; }
+        public DateTime CreatedAt { get => Timestamp; set => Timestamp = value; }
     }
 }
 
