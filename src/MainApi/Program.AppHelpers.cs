@@ -56,9 +56,10 @@ internal static class AppHelpers
     // --- Database seed ---
     public static void SeedDatabase(MainDbContext ctx)
     {
+        string? adminLogin;
         if (!ctx.Users.Any())
         {
-            var adminLogin = Environment.GetEnvironmentVariable("ADMIN_LOGIN") ?? "admin";
+            adminLogin = Environment.GetEnvironmentVariable("ADMIN_LOGIN") ?? "admin";
             var adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "admin123";
             bool.TryParse(Environment.GetEnvironmentVariable("ADMIN_REQUIRE2FA"), out var adminRequire2FA);
             bool.TryParse(Environment.GetEnvironmentVariable("ADMIN_IS_BANNED"), out var adminIsBanned);
@@ -111,7 +112,7 @@ internal static class AppHelpers
         }
 
         // --- Seed roles and permissions ---
-        var adminLogin = Environment.GetEnvironmentVariable("ADMIN_LOGIN") ?? "admin";
+        adminLogin = Environment.GetEnvironmentVariable("ADMIN_LOGIN") ?? "admin";
         var adminRole = ctx.Roles.FirstOrDefault(r => r.Code == "admin");
         if (adminRole == null)
         {
