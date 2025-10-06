@@ -56,6 +56,7 @@ services:
     entrypoint: [ "/bin/sh", "/etc/prometheus/entrypoint.sh" ]
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
       - ./monitoring/prometheus/entrypoint.sh:/etc/prometheus/entrypoint.sh:ro
       - prometheus_data:/prometheus
     ports:
@@ -64,6 +65,7 @@ services:
       - backend
     depends_on:
       - mainapi
+      - blackbox
 
   grafana:
     image: grafana/grafana:11.1.0
@@ -81,6 +83,17 @@ services:
       - backend
     depends_on:
       - prometheus
+
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: blackbox
+    command: [ "--config.file=/etc/blackbox_exporter/config.yml" ]
+    volumes:
+      - ./monitoring/prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    ports:
+      - "9115:9115"
+    networks:
+      - backend
 
   phpmyadmin:
     image: phpmyadmin:5
