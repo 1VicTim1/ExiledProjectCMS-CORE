@@ -1,7 +1,7 @@
 import {createApp} from 'vue'
 import App from './App.vue'
 import router from './router'
-import {loadTheme} from './stores/theme'
+import {loadTheme} from './stores/theme.ts'
 
 const app = createApp(App)
 
