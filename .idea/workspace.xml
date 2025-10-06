@@ -5,41 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="29f2252b-175b-4d29-afbf-2e8e33ce87e2" name="Changes" comment="asd">
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/main.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/router.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/AuditLogs.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Dashboard.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Login.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Messenger.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Notifications.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/PageEditor.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Profile.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/RoleManager.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Tokens.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/login-frontend/src/views/Users.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/Models/AuditLog.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/Models/RolePermissionModels.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MainApi/Models/TokenPermission.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/login-frontend/src/App.vue" beforeDir="false" afterPath="$PROJECT_DIR$/login-frontend/src/App.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/MainApi.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.AppHelpers.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.deps.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.deps.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.staticwebassets.endpoints.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/bin/Debug/net8.0/MainApi.staticwebassets.endpoints.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.CoreCompileInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.CoreCompileInputs.cache" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.FileListAbsolute.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/MainApi.csproj.FileListAbsolute.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.endpoints.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.endpoints.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json.cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/Debug/net8.0/staticwebassets.build.json.cache" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.dgspec.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.dgspec.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.props" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.targets" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/MainApi.csproj.nuget.g.targets" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/project.assets.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/project.assets.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MainApi/obj/project.nuget.cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/MainApi/obj/project.nuget.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/App.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/router.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/router.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/stores/theme.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/utils/api.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/Dashboard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/Dashboard.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,6 +57,9 @@
 }</component>
   <component name="MaliciousPackageCheckinHandlerState">
     <option name="packageCheck" value="true" />
+  </component>
+  <component name="PackageJsonUpdateNotifier">
+    <dismissed value="$PROJECT_DIR$/frontend/package.json" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -167,11 +143,6 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
-    <option name="exactExcludedFiles">
-      <list>
-        <option value="$PROJECT_DIR$/login-frontend/src/main.js" />
-      </list>
-    </option>
   </component>
   <component name="UpdateCopyrightCheckinHandler">
     <option name="UPDATE_COPYRIGHT" value="true" />

@@ -2,40 +2,33 @@ import type {RouteRecordRaw} from 'vue-router';
 import {createRouter, createWebHistory} from 'vue-router';
 import Login from './views/Login.vue';
 import Dashboard from './views/Dashboard.vue';
+import Tokens from './views/Tokens.vue';
 import AuditLogs from './views/AuditLogs.vue';
+import Users from './views/Users.vue';
+import Profile from './views/Profile.vue';
 import PageEditor from './views/PageEditor.vue';
+import RoleManager from './views/RoleManager.vue';
+import Messenger from './views/Messenger.vue';
+import Notifications from './views/Notifications.vue';
 import ThemeSettings from './views/ThemeSettings.vue';
 
 const routes: RouteRecordRaw[] = [
     {path: '/', name: 'Login', component: Login},
     {path: '/login', redirect: {name: 'Login'}},
     {path: '/dashboard', name: 'Dashboard', component: Dashboard},
+    {path: '/tokens', name: 'Tokens', component: Tokens},
     {path: '/logs', name: 'AuditLogs', component: AuditLogs},
+    {path: '/users', name: 'Users', component: Users},
+    {path: '/profile', name: 'Profile', component: Profile},
     {path: '/page-editor', name: 'PageEditor', component: PageEditor},
-    {path: '/theme', name: 'ThemeSettings', component: ThemeSettings, meta: {requiredPermission: 'manage_theme'}},
+    {path: '/roles', name: 'RoleManager', component: RoleManager},
+    {path: '/messenger', name: 'Messenger', component: Messenger},
+    {path: '/notifications', name: 'Notifications', component: Notifications},
+    {path: '/settings/theme', name: 'ThemeSettings', component: ThemeSettings},
     {path: '/:pathMatch(.*)*', redirect: '/'},
 ];
 
-const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+export default createRouter({
+    history: createWebHistory((import.meta as any)?.env?.BASE_URL || '/'),
     routes,
 });
-
-// Minimal permission guard using window/localStorage permissions array
-router.beforeEach((to, _from, next) => {
-    const required = (to.meta as any)?.requiredPermission as string | undefined;
-    if (!required) return next();
-    // @ts-ignore
-    const perms = (window as any).__USER_PERMISSIONS__ || (() => {
-        try {
-            return JSON.parse(localStorage.getItem('user_permissions') || '[]');
-        } catch {
-            return [];
-        }
-    })();
-    if (Array.isArray(perms) && perms.includes(required)) return next();
-    // If not authorized, redirect to dashboard (or login)
-    return next({name: 'Dashboard'});
-});
-
-export default router;

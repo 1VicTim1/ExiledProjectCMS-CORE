@@ -1,13 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Login Frontend</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>Exiled Project CMS</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            /* App theme variables (dynamic) */
+            --color-primary: #8B5CF6;
+            --color-secondary: #7C3AED;
+            --color-accent: #A78BFA;
+            --color-error: #EF4444;
+            --color-warning: #F59E0B;
+            --color-info: #3B82F6;
+            --color-success: #10B981;
+            --color-background: #1F1F23;
+            --color-surface: #2D2D33;
+            /* Bootstrap integration */
+            --bs-primary: var(--color-primary);
+            --bs-body-bg: var(--color-background);
+            --bs-body-color: #ffffff;
+        }
+
+        html, body, #app {
+            height: 100%;
+        }
+
+        body {
+            background: var(--color-background);
+            color: var(--bs-body-color);
+        }
+
+        /* Simple animated card style */
+        .animated-card {
+            background: linear-gradient(135deg, #2D2D33 0%, #3C3C45 100%);
+            border: 1px solid var(--color-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.15);
+            transition: transform .2s ease;
+        }
+
+        .animated-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
+        }
+    </style>
 </head>
 <body>
 <div id="app"></div>
 <script src="/src/main.js" type="module"></script>
+<!-- Bootstrap JS (optional) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 

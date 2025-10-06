@@ -59,9 +59,9 @@
 <script lang="ts" setup>
 import {onMounted, ref} from 'vue'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = (import.meta as any)?.env?.VITE_API_BASE_URL || window.location.origin || ''
 const logs = ref<any[]>([])
-const filters = ref({userId: '', action: '', apiTokenId: '', details: '', ip: ''})
+const filters = ref({userId: '1', action: '', apiTokenId: '', details: '', ip: ''})
 
 function formatDate(d: string) {
   return new Date(d).toLocaleString('ru')
@@ -71,9 +71,10 @@ async function fetchLogs() {
   try {
     const params = new URLSearchParams()
     Object.entries(filters.value).forEach(([k, v]) => {
-      if (v) params.append(k, v as string)
+      if (v !== undefined && v !== null && String(v).length > 0) params.append(k, v as string)
     })
     const r = await fetch(`${API}/api/audit-logs?${params}`)
+    if (!r.ok) throw new Error('Failed to load logs')
     logs.value = await r.json()
   } catch (e) {
     console.warn('Не удалось загрузить логи:', e)
