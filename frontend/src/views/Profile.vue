@@ -116,7 +116,8 @@
 </template>
 
 <script lang="ts" setup>
-import {inject, onMounted, ref} from 'vue'
+import type {Ref} from 'vue'
+import {inject, onMounted, ref, unref} from 'vue'
 import {useRouter} from 'vue-router'
 
 const API = import.meta.env.VITE_API_BASE_URL || ''
@@ -133,10 +134,11 @@ const notifications = ref([
   {id: 1, title: 'Важное обновление', time: Date.now() - 3600000},
   {id: 2, title: 'Добро пожаловать!', time: Date.now() - 7200000}
 ])
-const userPermissions = inject<string[]>('userPermissions', [])
+const userPermissions = inject<string[] | Ref<string[]>>('userPermissions', [])
 
 function hasPermission(perm: string) {
-  return Array.isArray(userPermissions) && userPermissions.includes(perm)
+  const perms = unref(userPermissions)
+  return Array.isArray(perms) && perms.includes(perm)
 }
 
 function formatDate(d: string) {
@@ -145,8 +147,14 @@ function formatDate(d: string) {
 }
 
 async function fetchProfile() {
-  const r = await fetch(`${API}/api/profile`)
-  user.value = await r.json()
+  try {
+    const r = await fetch(`${API}/api/profile`)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    user.value = await r.json()
+  } catch (e) {
+    console.warn('Не удалось загрузить профиль:', e)
+    user.value = {}
+  }
 }
 
 onMounted(fetchProfile)

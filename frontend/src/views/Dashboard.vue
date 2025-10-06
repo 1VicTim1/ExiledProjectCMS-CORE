@@ -76,12 +76,14 @@
 </template>
 
 <script lang="ts" setup>
-import {inject} from 'vue'
+import type {Ref} from 'vue'
+import {inject, unref} from 'vue'
 
-const userPermissions = inject<string[]>('userPermissions', [])
+const userPermissions = inject<string[] | Ref<string[]>>('userPermissions', [])
 
 function hasPermission(perm: string) {
-  return Array.isArray(userPermissions) && userPermissions.includes(perm)
+  const perms = unref(userPermissions)
+  return Array.isArray(perms) && perms.includes(perm)
 }
 </script>
 

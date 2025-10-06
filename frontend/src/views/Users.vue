@@ -5,7 +5,8 @@
       <h2 class="fw-bold mb-0">Пользователи</h2>
     </div>
     <div class="mb-2 d-flex align-items-center gap-2">
-      <button v-if="hasPermission('send_notifications')" class="btn btn-outline-info btn-sm" @click="openNotifyModal">
+      <button v-if="hasPermission('send_notifications')" :disabled="selectedIds.length===0"
+              class="btn btn-outline-info btn-sm" @click="openNotifyModal">
         <i class="bi bi-bell"></i> Отправить уведомление выбранным
       </button>
       <div class="form-check">
@@ -74,14 +75,16 @@
 </template>
 
 <script lang="ts" setup>
-import {inject, onMounted, ref} from 'vue'
+import type {Ref} from 'vue'
+import {inject, onMounted, ref, unref} from 'vue'
 
 const API = import.meta.env.VITE_API_BASE_URL || ''
 const users = ref<any[]>([])
-const userPermissions = inject<string[]>('userPermissions', [])
+const userPermissions = inject<string[] | Ref<string[]>>('userPermissions', [])
 
 function hasPermission(perm: string) {
-  return Array.isArray(userPermissions) && userPermissions.includes(perm)
+  const perms = unref(userPermissions)
+  return Array.isArray(perms) && perms.includes(perm)
 }
 
 function formatDate(d: string) {
@@ -92,6 +95,7 @@ function formatDate(d: string) {
 async function fetchUsers() {
   try {
     const r = await fetch(`${API}/api/users`)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
     users.value = await r.json()
   } catch (e) {
     console.warn('Не удалось загрузить пользователей:', e)
@@ -103,14 +107,16 @@ onMounted(fetchUsers)
 
 async function forcePasswordChange(userId: number) {
   if (!confirm('Заставить пользователя сменить пароль при следующем входе?')) return
-  await fetch(`${API}/api/users/${userId}/force-password`, {method: 'POST'})
-  alert('Пользователь будет вынужден сменить пароль при следующем входе.')
+  const r = await fetch(`${API}/api/users/${userId}/force-password`, {method: 'POST'})
+  if (r.ok) alert('Пользователь будет вынужден сменить пароль при следующем входе.')
+  else alert('Не удалось отправить запрос. Попробуйте позже.')
 }
 
 async function force2faBind(userId: number) {
   if (!confirm('Заставить пользователя привязать 2FA при следующем входе?')) return
-  await fetch(`${API}/api/users/${userId}/force-2fa`, {method: 'POST'})
-  alert('Пользователь будет вынужден привязать 2FA при следующем входе.')
+  const r = await fetch(`${API}/api/users/${userId}/force-2fa`, {method: 'POST'})
+  if (r.ok) alert('Пользователь будет вынужден привязать 2FA при следующем входе.')
+  else alert('Не удалось отправить запрос. Попробуйте позже.')
 }
 
 const selectedIds = ref<number[]>([])
@@ -128,17 +134,32 @@ function toggleSelectAll() {
 }
 
 async function sendNotify() {
-  const payload = {userIds: selectedIds.value, title: notifyForm.value.title, text: notifyForm.value.text}
+  if (selectedIds.value.length === 0) {
+    alert('Выберите хотя бы одного пользователя.')
+    return
+  }
+  if (!notifyForm.value.title.trim() || !notifyForm.value.text.trim()) {
+    alert('Заполните заголовок и текст уведомления.')
+    return
+  }
+  const payload = {userIds: selectedIds.value, title: notifyForm.value.title.trim(), text: notifyForm.value.text.trim()}
+  let ok = true
   try {
-    await fetch(`${API}/api/notifications/bulk`, {
+    const r = await fetch(`${API}/api/notifications/bulk`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
     })
+    ok = r.ok
   } catch (e) {
     console.warn('Не удалось отправить уведомления (заглушка):', e)
+    ok = false
   }
-  alert(`Уведомление отправлено пользователям: ${selectedIds.value.join(', ')}`)
+  if (ok) {
+    alert(`Уведомление отправлено пользователям: ${selectedIds.value.join(', ')}`)
+  } else {
+    alert('Не удалось отправить уведомления. Попробуйте позже.')
+  }
   showNotifyModal.value = false
   notifyForm.value = {title: '', text: ''}
 }

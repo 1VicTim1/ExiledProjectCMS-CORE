@@ -43,11 +43,15 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, inject, ref} from 'vue'
+import type {Ref} from 'vue'
+import {computed, inject, ref, unref} from 'vue'
 
 const API = import.meta.env.VITE_API_BASE_URL || ''
-const userPermissions = inject<string[]>('userPermissions', [])
-const isAdmin = computed(() => Array.isArray(userPermissions) && (userPermissions.includes('admin_panel') || userPermissions.includes('send_notifications')))
+const userPermissions = inject<string[] | Ref<string[]>>('userPermissions', [])
+const isAdmin = computed(() => {
+  const perms = unref(userPermissions)
+  return Array.isArray(perms) && (perms.includes('admin_panel') || perms.includes('send_notifications'))
+})
 
 const notifications = ref([
   {id: 1, title: 'Важное обновление', text: 'Система будет недоступна ночью.', time: Date.now() - 3600000},
