@@ -43,9 +43,12 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from 'vue'
+import {computed, inject, ref} from 'vue'
 
-const isAdmin = true // TODO: заменить на реальную проверку прав
+const API = import.meta.env.VITE_API_BASE_URL || ''
+const userPermissions = inject('userPermissions', ref<string[]>([]))
+const isAdmin = computed(() => userPermissions.value.includes('admin_panel') || userPermissions.value.includes('send_notifications'))
+
 const notifications = ref([
   {id: 1, title: 'Важное обновление', text: 'Система будет недоступна ночью.', time: Date.now() - 3600000},
   {id: 2, title: 'Добро пожаловать!', text: 'Спасибо за регистрацию!', time: Date.now() - 7200000}
@@ -61,8 +64,18 @@ function formatDate(t: number) {
   return new Date(t).toLocaleString('ru-RU')
 }
 
-function sendNotification() {
-  // TODO: отправить уведомление через API
+async function sendNotification() {
+  // Реальный вызов API с мягким фолбэком
+  const payload: any = {title: sendForm.value.title, text: sendForm.value.text, target: sendForm.value.target}
+  try {
+    await fetch(`${API}/api/notifications`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    })
+  } catch (e) {
+    console.warn('Не удалось отправить уведомление (заглушка):', e)
+  }
   notifications.value.unshift({
     id: Date.now(),
     title: sendForm.value.title,

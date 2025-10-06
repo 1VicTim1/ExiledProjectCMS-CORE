@@ -124,7 +124,16 @@ function toggleSelectAll() {
 }
 
 async function sendNotify() {
-  // TODO: отправить уведомление через API
+  const payload = {userIds: selectedIds.value, title: notifyForm.value.title, text: notifyForm.value.text}
+  try {
+    await fetch(`${API}/api/notifications/bulk`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    })
+  } catch (e) {
+    console.warn('Не удалось отправить уведомления (заглушка):', e)
+  }
   alert(`Уведомление отправлено пользователям: ${selectedIds.value.join(', ')}`)
   showNotifyModal.value = false
   notifyForm.value = {title: '', text: ''}

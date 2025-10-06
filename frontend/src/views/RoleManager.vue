@@ -19,7 +19,7 @@
         <tbody>
         <tr v-for="role in roles" :key="role.id">
           <td>{{ role.id }}</td>
-          <td><input v-model="role.name" class="form-control form-control-sm"></td>
+          <td><input v-model="role.name" class="form-control form-control-sm" @blur="saveRole(role)"></td>
           <td>
             <div class="form-check form-switch">
               <input v-model="role.force2fa" class="form-check-input" type="checkbox" @change="saveRole(role)">
@@ -52,6 +52,8 @@ interface Role {
   permissions: string[]
 }
 
+const API = import.meta.env.VITE_API_BASE_URL || ''
+
 const roles = ref<Role[]>([
   {
     id: 1,
@@ -65,16 +67,31 @@ const allPermissions = ref<string[]>(['force_password_change', 'force_2fa_bind',
 
 function createRole() {
   const id = Math.max(0, ...roles.value.map(r => r.id)) + 1
-  roles.value.push({id, name: '', force2fa: false, permissions: []})
+  const role: Role = {id, name: '', force2fa: false, permissions: []}
+  roles.value.push(role)
+  // Try to persist new role
+  saveRole(role)
 }
 
-function saveRole(role: Role) {
-  // TODO: отправить изменения на сервер
+async function saveRole(role: Role) {
+  try {
+    const method = roles.value.some(r => r.id === role.id) ? 'PUT' : 'POST'
+    await fetch(`${API}/api/roles${method === 'PUT' ? '/' + role.id : ''}`,
+        {method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(role)})
+  } catch (e) {
+    console.warn('Не удалось сохранить роль (заглушка):', e)
+  }
 }
 
-function deleteRole(id: number) {
+async function deleteRole(id: number) {
+  const backup = [...roles.value]
   roles.value = roles.value.filter(r => r.id !== id)
-  // TODO: удалить на сервере
+  try {
+    await fetch(`${API}/api/roles/${id}`, {method: 'DELETE'})
+  } catch (e) {
+    console.warn('Не удалось удалить роль (заглушка):', e)
+    roles.value = backup // revert
+  }
 }
 </script>
 

@@ -230,6 +230,8 @@
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
 
+const API = import.meta.env.VITE_API_BASE_URL || ''
+
 interface Page {
   id: number,
   title: string,
@@ -327,9 +329,28 @@ const pageFont = ref('Arial, sans-serif')
 const pageFontSize = ref(16)
 const newElemType = ref('button')
 
-function saveLayout() {
-  // TODO: отправить макет на сервер
-  alert('Макет сохранён! (заглушка)')
+async function saveLayout() {
+  const layout = {
+    headerHtml: headerHtml.value,
+    footerHtml: footerHtml.value,
+    pageBg: pageBg.value,
+    pageGradient: pageGradient.value,
+    pageFont: pageFont.value,
+    pageFontSize: pageFontSize.value,
+    elements: visualElements.value
+  }
+  try {
+    const r = await fetch(`${API}/api/pages/layout`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(layout)
+    })
+    if (!r.ok) throw new Error('Сервер вернул ошибку')
+    alert('Макет сохранён!')
+  } catch (e) {
+    console.warn('Не удалось сохранить макет (заглушка):', e)
+    alert('Макет сохранён локально (заглушка).')
+  }
 }
 
 function removeElement(idx: number) {

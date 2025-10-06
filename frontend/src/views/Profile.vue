@@ -117,8 +117,10 @@
 
 <script lang="ts" setup>
 import {inject, onMounted, ref} from 'vue'
+import {useRouter} from 'vue-router'
 
 const API = import.meta.env.VITE_API_BASE_URL || ''
+const router = useRouter()
 const user = ref<any>({})
 const defaultAvatar = '/default-avatar.png'
 const showPasswordModal = ref(false)
@@ -150,7 +152,8 @@ async function fetchProfile() {
 onMounted(fetchProfile)
 
 function change2fa() {
-  alert('Управление 2FA — TODO')
+  // Направим пользователя в раздел 2FA на дашборде (минимально инвазивно)
+  router.push('/dashboard')
 }
 
 function toggleTheme() {
@@ -158,7 +161,7 @@ function toggleTheme() {
 }
 
 function showNotifications() {
-  alert('Уведомления — TODO')
+  router.push('/notifications')
 }
 
 function onAvatarChange(e: Event) {
@@ -182,9 +185,18 @@ async function submitPassword() {
     passwordError.value = 'Пароли не совпадают'
     return
   }
-  // TODO: отправить на сервер
-  passwordSuccess.value = 'Пароль успешно изменён (заглушка)'
-  setTimeout(() => showPasswordModal.value = false, 1200)
+  try {
+    const r = await fetch(`${API}/api/profile/change-password`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({old: passwordForm.value.old, password: passwordForm.value.new1, userId: 1})
+    })
+    if (!r.ok) throw new Error('Ошибка смены пароля')
+    passwordSuccess.value = 'Пароль успешно изменён'
+    setTimeout(() => showPasswordModal.value = false, 1200)
+  } catch (e: any) {
+    passwordError.value = e?.message || 'Не удалось изменить пароль'
+  }
 }
 </script>
 
