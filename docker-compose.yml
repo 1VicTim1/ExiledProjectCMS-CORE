@@ -97,11 +97,11 @@ services:
     networks:
       - backend
 
-  login-frontend:
+  frontend:
     build:
-      context: ./login-frontend
+      context: frontend
       dockerfile: Dockerfile
-    container_name: login-frontend
+    container_name: frontend
     env_file:
       - ./.env
     environment:
